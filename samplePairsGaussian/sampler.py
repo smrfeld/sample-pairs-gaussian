@@ -7,6 +7,8 @@ class Sampler:
 
     Attributes:
     prob_calculator (ProbCalculator): probability calculator
+    idx_first_particle (int): idx of the first particle chosen
+    idx_second_particle (int): idx of the second particle chosen
 
     Private attributes:
     _logger (logger): logging
@@ -32,6 +34,10 @@ class Sampler:
 
         # Prob prob_calculator
         self.prob_calculator = prob_calculator
+
+        # Init all other structures
+        self.idx_first_particle = None
+        self.idx_second_particle = None
 
 
 
