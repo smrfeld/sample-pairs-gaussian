@@ -3,13 +3,58 @@ from prob_calculator import *
 import numpy as np
 
 class Sampler:
+    """Sampler class.
 
-    def __init__(self, posns, std_dev, std_dev_clip_mult):
+    Attributes:
+    prob_calculator (ProbCalculator): probability calculator
+
+    Private attributes:
+    _logger (logger): logging
+    """
+
+    def __init__(self, prob_calculator):
+        """Constructor. Also computes distances.
+
+        Args:
+        prob_calculator (ProbCalculator): probability calculator
+        """
+
+        # Setup the logger
+        self._logger = logging.getLogger(__name__)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(formatter)
+        self._logger.addHandler(ch)
+
+        # Level of logging to display
+        self._logger.setLevel(logging.ERROR)
 
         # Prob prob_calculator
-        self.prob_calculator = ProbCalculator(posns,std_dev,std_dev_clip_mult)
+        self.prob_calculator = prob_calculator
+
+
+
+    def set_logging_level(self, level):
+        """Sets the logging level
+
+        Args:
+        level (logging): logging level
+        """
+        self._logger.setLevel(level)
+
+
 
     def rejection_sample_first_particle(self, no_tries_max=100, compute_probs=True):
+        """Use rejection sampling to sample the first particle
+
+        Args:
+        no_tries_max (int): max. no. of tries for rejection sampling
+        compute_probs (bool): whether to first call compute_probs_first_particle for the ProbCalculator
+
+        Returns:
+        bool: True for success, False for failure
+        """
 
         # Form probabilities
         if compute_probs:
@@ -28,12 +73,25 @@ class Sampler:
             if r < self.prob_calculator.probs_first_particle[idx]:
                 # Accept
                 self.idx_first_particle = idx
-                print("Accepted first particle idx: " + str(idx) + " after: " + str(i_try) + " tries")
+                self._logger.info("Accepted first particle idx: " + str(idx) + " after: " + str(i_try) + " tries")
+                return True
 
-        if i_try == no_tries_max:
-            print("Error! Could not sample the first particle after: " + str(no_tries_max) + "tries.")
+        # Getting here means failure
+        self._logger.error("Error! Could not sample the first particle after: " + str(i_try) + "tries.")
+        return False
+
+
 
     def rejection_sample_second_particle(self, no_tries_max=100, compute_probs=True):
+        """Use rejection sampling to sample the second particle
+
+        Args:
+        no_tries_max (int): max. no. of tries for rejection sampling
+        compute_probs (bool): whether to first call compute_probs_second_particle for the ProbCalculator
+
+        Returns:
+        bool: True for success, False for failure
+        """
 
         # Form probabilities
         if compute_probs:
@@ -52,12 +110,25 @@ class Sampler:
             if r < self.prob_calculator.probs_second_particle[idx]:
                 # Accept
                 self.idx_second_particle = self.prob_calculator.idxs_possible_second_particle[idx]
-                print("Accepted second particle idx: " + str(idx) + " after: " + str(i_try) + " tries")
 
-        if i_try == no_tries_max:
-            print("Error! Could not sample the second particle after: " + str(no_tries_max) + "tries.")
+                self._logger.info("Accepted second particle idx: " + str(idx) + " after: " + str(i_try) + " tries")
+
+                return True
+
+        # Getting here means failure
+        self._logger.error("Error! Could not sample the second particle after: " + str(no_tries_max) + "tries.")
+        return False
 
     def cdf_sample_first_particle(self,compute_probs=True):
+        """Sample the first particle by directly calculating the CDF via np.random.choice
+        Ensures that the probabilities in the ProbCalculator are normalized before proceeding
+
+        Args:
+        compute_probs (bool): whether to first call compute_probs_first_particle for the ProbCalculator
+
+        Returns:
+        bool: True for success, False for failure
+        """
 
         # Form probabilities
         if compute_probs:
@@ -73,9 +144,22 @@ class Sampler:
         # Choose
         self.idx_first_particle = np.random.choice(range(0,self.prob_calculator.n), 1, p=self.prob_calculator.probs_first_particle)[0]
 
-        print("CDF sampled first particle idx: " + str(self.idx_first_particle))
+        self._logger.info("CDF sampled first particle idx: " + str(self.idx_first_particle))
+
+        return True
+
+
 
     def cdf_sample_second_particle(self,compute_probs=True):
+        """Sample the second particle by directly calculating the CDF via np.random.choice
+        Ensures that the probabilities in the ProbCalculator are normalized before proceeding
+
+        Args:
+        compute_probs (bool): whether to first call compute_probs_second_particle for the ProbCalculator
+
+        Returns:
+        bool: True for success, False for failure
+        """
 
         # Form probabilities
         if compute_probs:
@@ -91,4 +175,6 @@ class Sampler:
         # Choose
         self.idx_second_particle = np.random.choice(self.prob_calculator.idxs_possible_second_particle, 1, p=self.prob_calculator.probs_second_particle)[0]
 
-        print("CDF sampled second particle idx: " + str(self.idx_second_particle))
+        self._logger.info("CDF sampled second particle idx: " + str(self.idx_second_particle))
+
+        return True
