@@ -1,6 +1,6 @@
 # Add the path to the module
 import sys
-sys.path.append('../sampleParticlesGaussian/')
+sys.path.append('../samplePairsGaussian/')
 import numpy as np
 
 from sampler import *
