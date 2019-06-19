@@ -7,6 +7,18 @@ Python code to sample pairs of a given set of particles in n dims, where the pro
 
 Python 3 & Numpy.
 
+## Installation and usage
+
+The usual:
+```
+python setup.py install
+```
+and in your code:
+```
+from samplePairsGaussian import *
+```
+See also the [examples](examples) folder.
+
 ## Idea
 
 Given a set of `n` particles with positions in `d`-dimensional space denoted by `x_i` for `i=0,1,...,n`.
