@@ -1,11 +1,14 @@
-# Add the path to the module
-import sys
-sys.path.append('../samplePairsGaussian/')
+# If installed:
+from samplePairsGaussian import *
 
+# Else: Add the path to the module
+# import sys
+# sys.path.append('../samplePairsGaussian/')
+# from sampler import *
+
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
-
-from sampler import *
 
 if __name__ == "__main__":
 
@@ -47,18 +50,14 @@ if __name__ == "__main__":
     prob_calculator.compute_probs_first_particle()
     compute_probs_first_particle = False
 
-    no_samples = 10000
+    no_samples = 1000
     no_tries_max = 100
     idxs_1 = []
     idxs_2 = []
     for i in range(0,no_samples):
 
         # Sample using rejection sampling
-        success = sampler.rejection_sample_first_particle(no_tries_max,compute_probs_first_particle)
-        if not success:
-            handle_fail()
-
-        success = sampler.rejection_sample_second_particle(no_tries_max)
+        success = sampler.rejection_sample_pair(no_tries_max,compute_probs_first_particle)
         if not success:
             handle_fail()
 
@@ -70,22 +69,21 @@ if __name__ == "__main__":
         idxs_1.append(sampler.idx_first_particle)
         idxs_2.append(sampler.idx_second_particle)
 
+    idxs_1 = np.array(idxs_1).astype(int)
+    idxs_2 = np.array(idxs_2).astype(int)
+
     # Plot
 
-    # Histogram of the particle positions
     plt.figure()
     plt.hist(posns)
     plt.xlabel("particle position")
     plt.title("Distribution of " + str(N) + " particle positions")
 
     plt.figure()
-    plt.plot(posns[idxs_1][:,0],posns[idxs_2][:,0],'o')
-    plt.xlabel("position of particle #1")
-    plt.ylabel("position of particle #2")
-    plt.title(str(no_samples)+ " sampled pairs of particles")
-
-    plt.figure()
-    plt.hist2d(posns[idxs_1][:,0], posns[idxs_2][:,0], bins=(20, 20), cmap=plt.cm.jet)
+    # Make symmetric
+    idxs_1_symmetric = np.concatenate((idxs_1,idxs_2))
+    idxs_2_symmetric = np.concatenate((idxs_2,idxs_1))
+    plt.plot(posns[idxs_1_symmetric][:,0],posns[idxs_2_symmetric][:,0],'o')
     plt.xlabel("position of particle #1")
     plt.ylabel("position of particle #2")
     plt.title(str(no_samples)+ " sampled pairs of particles")

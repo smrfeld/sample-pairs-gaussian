@@ -1,10 +1,13 @@
-# Add the path to the module
+# If installed:
+from samplePairsGaussian import *
+
+# Else: Add the path to the module
+# import sys
+# sys.path.append('../samplePairsGaussian/')
+# from sampler import *
+
 import sys
-sys.path.append('../samplePairsGaussian/')
-
 import numpy as np
-
-from sampler import *
 
 if __name__ == "__main__":
 
@@ -45,19 +48,11 @@ if __name__ == "__main__":
 
     # Sample pair using rejection sampling
     no_tries_max = 100
-    success = sampler.rejection_sample_first_particle(no_tries_max)
-    if not success:
-        handle_fail()
-
-    succeess = sampler.rejection_sample_second_particle(no_tries_max)
+    success = sampler.rejection_sample_pair(no_tries_max)
     if not success:
         handle_fail()
 
     # Sample pair using CDF
-    success = sampler.cdf_sample_first_particle()
-    if not success:
-        handle_fail()
-
-    success = sampler.cdf_sample_second_particle()
+    success = sampler.cdf_sample_pair()
     if not success:
         handle_fail()

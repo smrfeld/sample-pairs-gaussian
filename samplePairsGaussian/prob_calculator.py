@@ -35,7 +35,7 @@ class ProbCalculator:
 
 
     def __init__(self, posns, std_dev, std_dev_clip_mult):
-        """Constructor. Also computes distances.
+        """Constructor.
 
         Args:
         posns (np.array([[float]])): particle positions. First axis are particles, seconds are coordinates in n-dimensional space
@@ -78,10 +78,6 @@ class ProbCalculator:
         self.are_probs_second_particle_normalized = False
         self.max_prob_second_particle = 0.0
 
-        # Compute distances if at least 2 particles
-        if self.n >= 2:
-            self.compute_dists_squared()
-
 
 
     def set_logging_level(self, level):
@@ -90,24 +86,6 @@ class ProbCalculator:
         level (logging): logging level
         """
         self._logger.setLevel(level)
-
-
-
-    def compute_dists_squared(self):
-        """Compute distances for given particles.
-        """
-
-        if self.n < 2:
-            self._logger.error("Error: computing distances for: " + str(self.n) + " particles. This can't work! Quitting.")
-            sys.exit(0)
-
-        # uti is a list of two (1-D) numpy arrays
-        # containing the indices of the upper triangular matrix
-        self._uti = np.triu_indices(self.n,k=1)        # k=1 eliminates diagonal indices
-
-        # uti[0] is i, and uti[1] is j from the previous example
-        dr = self.posns[self._uti[0]] - self.posns[self._uti[1]]            # computes differences between particle positions
-        self._dists_squared = np.sum(dr*dr, axis=1)    # computes distances squared; D is a 4950 x 1 np array
 
 
 
@@ -121,6 +99,19 @@ class ProbCalculator:
         Args:
         with_normalization (bool): whether the probabilities will be normalized
         """
+
+        # Check there are sufficient particles
+        if self.n < 2:
+            self._logger.error("Error: computing distances for: " + str(self.n) + " particles. This can't work! Quitting.")
+            sys.exit(0)
+
+        # uti is a list of two (1-D) numpy arrays
+        # containing the indices of the upper triangular matrix
+        self._uti = np.triu_indices(self.n,k=1)        # k=1 eliminates diagonal indices
+
+        # uti[0] is i, and uti[1] is j from the previous example
+        dr = self.posns[self._uti[0]] - self.posns[self._uti[1]]            # computes differences between particle positions
+        self._dists_squared = np.sum(dr*dr, axis=1)    # computes distances squared; D is a 4950 x 1 np array
 
         # Clip distances at std_dev_clip_mult * sigma
         max_dist_squared = pow(self.std_dev_clip_mult*self.std_dev,2)

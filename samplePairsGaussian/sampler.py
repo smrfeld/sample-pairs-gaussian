@@ -129,6 +129,50 @@ class Sampler:
 
 
 
+    def rejection_sample_pair(self, no_tries_max=100, compute_probs_first_particle=True):
+        """Use rejection sampling to sample a pair of particles
+
+        Args:
+        no_tries_max (int): max. no. of tries for rejection sampling
+        compute_probs_first_particle (bool): whether to first call compute_probs_first_particle for the ProbCalculator
+
+        Returns:
+        bool: True for success, False for failure
+        """
+
+        if compute_probs_first_particle:
+            self.prob_calculator.compute_probs_first_particle()
+
+        # Turn off logging temp
+        level = self._logger.level
+        self._logger.setLevel(logging.CRITICAL)
+
+        i_try = 0
+        while i_try < no_tries_max:
+            i_try += 1
+
+            success = self.rejection_sample_first_particle(no_tries_max=1,compute_probs=False)
+            if not success:
+                continue # try again
+
+            success = self.rejection_sample_second_particle(no_tries_max=1,compute_probs=True)
+            if not success:
+                continue # try again
+
+            # Set logging back
+            self._logger.setLevel(level)
+
+            self._logger.info("Accepted pair particles idxs: " + str(self.idx_first_particle) + " " + str(self.idx_second_particle) + " after: " + str(i_try) + " tries")
+
+            # Done
+            return True
+
+        # Getting here means failure
+        self._logger.error("Error! Could not sample the two particles after: " + str(no_tries_max) + " tries.")
+        return False
+
+
+
     def cdf_sample_first_particle(self,compute_probs=True):
         """Sample the first particle by directly calculating the CDF via np.random.choice
         Ensures that the probabilities in the ProbCalculator are normalized before proceeding
@@ -187,4 +231,49 @@ class Sampler:
 
         self._logger.info("CDF sampled second particle idx: " + str(self.idx_second_particle))
 
+        return True
+
+
+
+    def cdf_sample_pair(self, compute_probs_first_particle=True):
+        """Sample both particles directly using numpy.random.choice
+
+        Args:
+        compute_probs_first_particle (bool): whether to first call compute_probs_first_particle for the ProbCalculator
+
+        Returns:
+        bool: True for success, False for failure
+        """
+
+        if compute_probs_first_particle:
+            self.prob_calculator.compute_probs_first_particle()
+
+        # Ensure normalized
+        if self.prob_calculator.are_probs_first_particle_normalized == False:
+            self.prob_calculator.are_probs_first_particle_normalized == True
+            norm = np.sum(self.prob_calculator.probs_first_particle)
+            self.prob_calculator.probs_first_particle /= norm
+            self.max_prob_first_particle = 1.0
+
+        # Turn off logging temp
+        level = self._logger.level
+        self._logger.setLevel(logging.CRITICAL)
+
+        success = self.cdf_sample_first_particle(compute_probs=False)
+        if not success:
+            self._logger.setLevel(level)
+            self._logger.error("Error! Could not sample the two particles using cdf_sample_pair.")
+            return False
+
+        success = self.cdf_sample_second_particle(compute_probs=True)
+        if not success:
+            self._logger.setLevel(level)
+            self._logger.error("Error! Could not sample the two particles using cdf_sample_pair.")
+            return False
+
+        # Set logging back
+        self._logger.setLevel(level)
+        self._logger.info("CDF sampled pair particle idxs: " + str(self.idx_first_particle) + " " + str(self.idx_second_particle))
+
+        # Done
         return True
