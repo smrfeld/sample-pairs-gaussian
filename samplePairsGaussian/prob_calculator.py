@@ -63,6 +63,7 @@ class ProbCalculator:
         self._uti = np.array([]).astype(int)
         self._dists_squared = np.array([])
 
+        self._dists_squared_filter = np.array([])
         self._uti0filter = np.array([]).astype(int)
         self._uti1filter = np.array([]).astype(int)
         self._gauss = np.array([])

@@ -14,6 +14,8 @@ class Sampler:
     _logger (logger): logging
     """
 
+
+
     def __init__(self, prob_calculator):
         """Constructor. Also computes distances.
 
@@ -83,7 +85,7 @@ class Sampler:
                 return True
 
         # Getting here means failure
-        self._logger.error("Error! Could not sample the first particle after: " + str(i_try) + "tries.")
+        self._logger.error("Error! Could not sample the first particle after: " + str(i_try) + " tries.")
         return False
 
 
@@ -122,8 +124,10 @@ class Sampler:
                 return True
 
         # Getting here means failure
-        self._logger.error("Error! Could not sample the second particle after: " + str(no_tries_max) + "tries.")
+        self._logger.error("Error! Could not sample the second particle after: " + str(no_tries_max) + " tries.")
         return False
+
+
 
     def cdf_sample_first_particle(self,compute_probs=True):
         """Sample the first particle by directly calculating the CDF via np.random.choice
