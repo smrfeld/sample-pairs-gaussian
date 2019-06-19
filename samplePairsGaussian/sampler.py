@@ -1,4 +1,4 @@
-from prob_calculator import *
+from .prob_calculator import *
 
 import numpy as np
 

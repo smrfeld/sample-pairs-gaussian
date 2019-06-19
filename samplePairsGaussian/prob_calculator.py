@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+import sys
 
 class ProbCalculator:
     """Calculates distances and probabilities for a set of particles.
@@ -77,8 +78,9 @@ class ProbCalculator:
         self.are_probs_second_particle_normalized = False
         self.max_prob_second_particle = 0.0
 
-        # Compute distances
-        self.compute_dists_squared()
+        # Compute distances if at least 2 particles
+        if self.n >= 2:
+            self.compute_dists_squared()
 
 
 
@@ -94,6 +96,10 @@ class ProbCalculator:
     def compute_dists_squared(self):
         """Compute distances for given particles.
         """
+
+        if self.n < 2:
+            self._logger.error("Error: computing distances for: " + str(self.n) + " particles. This can't work! Quitting.")
+            sys.exit(0)
 
         # uti is a list of two (1-D) numpy arrays
         # containing the indices of the upper triangular matrix
