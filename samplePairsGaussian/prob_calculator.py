@@ -82,10 +82,47 @@ class ProbCalculator:
 
     def set_logging_level(self, level):
         """Sets the logging level
+
         Args:
         level (logging): logging level
         """
         self._logger.setLevel(level)
+
+
+
+    def add_particle(self, posn):
+        """Add a particle
+
+        Args:
+        posn (np.array([float])): position in d dimensions
+        """
+
+        self.posns.append(posn)
+        self.n += 1
+
+
+
+    def remove_particle(self, idx):
+        """Remove a particle
+
+        Args:
+        idx (int): idx of the particle to remove
+        """
+
+        del self.posns[idx]
+        self.n -= 1
+
+
+
+    def move_particle(self, idx, new_posn):
+        """Move a particle
+
+        Args:
+        idx (int): idx of the particle to move
+        new_posn (np.array([float])): new position in d dimensions
+        """
+
+        self.posns[idx] = new_posn
 
 
 
@@ -128,6 +165,8 @@ class ProbCalculator:
         self.are_probs_first_particle_normalized = False
         self.max_prob_first_particle = max(self.probs_first_particle)
 
+
+
     def normalize_probs_first_particle(self):
         """Normalize the probs for the first particle
         """
@@ -136,6 +175,8 @@ class ProbCalculator:
         norm = np.sum(self.probs_first_particle)
         self.probs_first_particle /= norm
         self.max_prob_first_particle = 1.0
+
+
 
     def compute_un_probs_second_particle(self, idx_first_particle):
         """Compute un-normalized probabilities for drawing the second particle for a given first particle.
@@ -163,6 +204,8 @@ class ProbCalculator:
 
         self.are_probs_second_particle_normalized = False
         self.max_prob_second_particle = max(self.probs_second_particle)
+
+
 
     def normalize_probs_second_particle(self):
         """Normalize the probs for the second particle

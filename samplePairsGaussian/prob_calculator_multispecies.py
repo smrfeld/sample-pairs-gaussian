@@ -1,14 +1,23 @@
 from .prob_calculator import *
 
 class ProbCalculatorMultiSpecies:
+    """Calculates distances and probabilities for a set of particles of multiple species by holding a set of ProbCalculator objects.
+
+    Attributes:
+    prob_calculator_arr ([ProbCalculator]): list of prob calculators.
+    species_arr ([str]): list of species names/labels
+    no_species (int): the number of species
+
+    Private attributes:
+    _logger (logger): logging
+    """
 
     def __init__(self, prob_calculator_arr, species_arr):
         """Constructor.
 
         Args:
-        posns (np.array([[float]])): particle positions. First axis are particles, seconds are coordinates in n-dimensional space
-        std_dev (float): standard deviation for cutting off probabilities
-        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
+        prob_calculator_arr ([ProbCalculator]): list of prob calculators.
+        species_arr ([str]): list of species names/labels
         """
 
         # Setup the logger
@@ -35,6 +44,8 @@ class ProbCalculatorMultiSpecies:
         # compute species probabilities
         self.compute_species_probs()
 
+
+
     def set_logging_level(self, level):
         """Sets the logging level
         Args:
@@ -42,8 +53,10 @@ class ProbCalculatorMultiSpecies:
         """
         self._logger.setLevel(level)
 
+
+
     def compute_species_probs(self):
-        """compute probabilities for the different species.
+        """Compute probabilities for the different species.
         """
 
         self.probs_species = np.zeros(self.no_species)

@@ -3,12 +3,14 @@ from .prob_calculator_multispecies import *
 import numpy as np
 
 class SamplerMultiSpecies:
-    """SamplerMultiSpecies class.
+    """Sampler for multiple species.
 
     Attributes:
-    prob_calculator (ProbCalculator): probability calculator
+    prob_calculator_multispecies (ProbCalculatorMultiSpecies): probability calculator
     idx_first_particle (int): idx of the first particle chosen
     idx_second_particle (int): idx of the second particle chosen
+    idx_species_particles (int): idx of the species of both particles
+    species_particles (str): species of both particles
 
     Private attributes:
     _logger (logger): logging
@@ -60,6 +62,7 @@ class SamplerMultiSpecies:
 
         Args:
         no_tries_max (int): max. no. of tries for rejection sampling
+        compute_probs_species (bool): whether to first call compute_probs_species for the ProbCalculatorMultiSpecies
         compute_probs (bool): whether to first call compute_probs_first_particle for the ProbCalculatorMultiSpecies
 
         Returns:
@@ -146,6 +149,7 @@ class SamplerMultiSpecies:
 
         Args:
         no_tries_max (int): max. no. of tries for rejection sampling
+        compute_probs_species (bool): whether to first call compute_probs_species for the ProbCalculatorMultiSpecies
         compute_probs_first_particle (bool): whether to first call compute_probs_first_particle for the ProbCalculator
 
         Returns:
@@ -196,6 +200,7 @@ class SamplerMultiSpecies:
         Ensures that the probabilities in the ProbCalculator are normalized before proceeding
 
         Args:
+        compute_probs_species (bool): whether to first call compute_probs_species for the ProbCalculatorMultiSpecies
         compute_probs (bool): whether to first call compute_probs_first_particle for the ProbCalculator
 
         Returns:
@@ -261,6 +266,7 @@ class SamplerMultiSpecies:
         """Sample both particles directly using numpy.random.choice
 
         Args:
+        compute_probs_species (bool): whether to first call compute_probs_species for the ProbCalculatorMultiSpecies
         compute_probs_first_particle (bool): whether to first call compute_probs_first_particle for the ProbCalculator
 
         Returns:
