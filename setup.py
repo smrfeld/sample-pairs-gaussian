@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='SamplePairsGaussian',
-    version='1.0',
+    version='1.1',
     author='Oliver K. Ernst',
     packages=['samplePairsGaussian','examples'],
     install_requires=[
