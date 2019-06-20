@@ -186,14 +186,11 @@ class Sampler:
 
         # Form probabilities
         if compute_probs:
-            self.prob_calculator.compute_probs_first_particle(with_normalization=True)
+            self.prob_calculator.compute_probs_first_particle()
 
         # Ensure normalized
         if self.prob_calculator.are_probs_first_particle_normalized == False:
-            self.prob_calculator.are_probs_first_particle_normalized == True
-            norm = np.sum(self.prob_calculator.probs_first_particle)
-            self.prob_calculator.probs_first_particle /= norm
-            self.max_prob_first_particle = 1.0
+            self.prob_calculator.normalize_probs_first_particle()
 
         # Choose
         self.idx_first_particle = np.random.choice(range(0,self.prob_calculator.n), 1, p=self.prob_calculator.probs_first_particle)[0]
@@ -217,14 +214,11 @@ class Sampler:
 
         # Form probabilities
         if compute_probs:
-            self.prob_calculator.compute_probs_second_particle(self.idx_first_particle,with_normalization=True)
+            self.prob_calculator.compute_probs_second_particle(self.idx_first_particle)
 
         # Ensure normalized
         if self.prob_calculator.are_probs_second_particle_normalized == False:
-            self.prob_calculator.are_probs_second_particle_normalized == True
-            norm = np.sum(self.prob_calculator.probs_second_particle)
-            self.prob_calculator.probs_second_particle /= norm
-            self.max_prob_second_particle = 1.0
+            self.prob_calculator.normalize_probs_second_particle()
 
         # Choose
         self.idx_second_particle = np.random.choice(self.prob_calculator.idxs_possible_second_particle, 1, p=self.prob_calculator.probs_second_particle)[0]
@@ -250,10 +244,7 @@ class Sampler:
 
         # Ensure normalized
         if self.prob_calculator.are_probs_first_particle_normalized == False:
-            self.prob_calculator.are_probs_first_particle_normalized == True
-            norm = np.sum(self.prob_calculator.probs_first_particle)
-            self.prob_calculator.probs_first_particle /= norm
-            self.max_prob_first_particle = 1.0
+            self.prob_calculator.normalize_probs_first_particle()
 
         # Turn off logging temp
         level = self._logger.level

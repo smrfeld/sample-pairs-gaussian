@@ -89,15 +89,12 @@ class ProbCalculator:
 
 
 
-    def compute_probs_first_particle(self, with_normalization=False):
-        """Compute probabilities for drawing the first particle out of n possible particles.
+    def compute_un_probs_first_particle(self):
+        """Compute un-normalized probabilities for drawing the first particle out of n possible particles.
         After running this, the following arguments will be set:
             probs_first_particle
             are_probs_first_particle_normalized
             max_prob_first_particle
-
-        Args:
-        with_normalization (bool): whether the probabilities will be normalized
         """
 
         # Check there are sufficient particles
@@ -128,21 +125,20 @@ class ProbCalculator:
 
         # Not normalized probs for first particle
         self.probs_first_particle = np.bincount(self._uti0filter,self._gauss,minlength=self.n) + np.bincount(self._uti1filter,self._gauss,minlength=self.n)
+        self.are_probs_first_particle_normalized = False
+        self.max_prob_first_particle = max(self.probs_first_particle)
 
-        # Normalization
-        if with_normalization:
-            self.are_probs_first_particle_normalized = True
-            norm = np.sum(self.probs_first_particle)
-            self.probs_first_particle /= norm
-            self.max_prob_first_particle = 1.0
-        else:
-            self.are_probs_first_particle_normalized = False
-            self.max_prob_first_particle = max(self.probs_first_particle)
+    def normalize_probs_first_particle(self):
+        """Normalize the probs for the first particle
+        """
 
+        self.are_probs_first_particle_normalized = True
+        norm = np.sum(self.probs_first_particle)
+        self.probs_first_particle /= norm
+        self.max_prob_first_particle = 1.0
 
-
-    def compute_probs_second_particle(self, idx_first_particle, with_normalization=False):
-        """Compute probabilities for drawing the second particle for a given first particle.
+    def compute_un_probs_second_particle(self, idx_first_particle):
+        """Compute un-normalized probabilities for drawing the second particle for a given first particle.
         After running this, the following arguments will be set:
             idxs_possible_second_particle
             no_idxs_possible_second_particle
@@ -152,7 +148,6 @@ class ProbCalculator:
 
         Args:
         idx_first_particle (int): the index of the first particle in 0,1,...,n-1
-        with_normalization (bool): whether the probabilities will be normalized
         """
 
         # Not normalized probs for second particle probs
@@ -166,11 +161,14 @@ class ProbCalculator:
         # Probs
         self.probs_second_particle = np.concatenate((self._gauss[true_false_0],self._gauss[true_false_1]))
 
-        # Normalization
-        if with_normalization:
-            self.are_probs_second_particle_normalized = True
-            norm = np.sum(self.probs_second_particle)
-            self.probs_second_particle /= norm
-        else:
-            self.are_probs_second_particle_normalized = False
-            self.max_prob_second_particle = max(self.probs_second_particle)
+        self.are_probs_second_particle_normalized = False
+        self.max_prob_second_particle = max(self.probs_second_particle)
+
+    def normalize_probs_second_particle(self):
+        """Normalize the probs for the second particle
+        """
+
+        self.are_probs_second_particle_normalized = True
+        norm = np.sum(self.probs_second_particle)
+        self.probs_second_particle /= norm
+        self.max_prob_second_particle = 1.0
