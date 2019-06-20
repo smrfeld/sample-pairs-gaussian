@@ -23,15 +23,8 @@ if __name__ == "__main__":
 
     # Setup the sampler
 
-    # Cutoff counting probabilities for particles that are more than:
-    # std_dev_clip_mult * std_dev
-    # away from each-other
-    std_dev = 1.0
-    std_dev_clip_mult = 3.0
-
     # Make the probability calculator
-    prob_calculator = ProbCalculator(posns,std_dev,std_dev_clip_mult)
-    # Distances have already been computed for us between all particles
+    prob_calculator = ProbCalculator(posns)
 
     # Make the sampler
     sampler = Sampler(prob_calculator)
@@ -43,9 +36,15 @@ if __name__ == "__main__":
         print("Could not draw the " + str(ith_particle) + " particle: try adjusting the std. dev. for the probability cutoff.")
         sys.exit(0)
 
+    # Cutoff counting probabilities for particles that are more than:
+    # std_dev_clip_mult * std_dev
+    # away from each-other
+    std_dev = 1.0
+    std_dev_clip_mult = 3.0
+
     # For efficiency, just compute the first particle probability now
-    prob_calculator.compute_un_probs_first_particle()
-    compute_un_probs_first_particle = False
+    prob_calculator.compute_un_probs_first_particle(std_dev,std_dev_clip_mult)
+    compute_probs_first_particle = False
 
     no_samples = 10000
     no_tries_max = 100
@@ -54,7 +53,7 @@ if __name__ == "__main__":
     for i in range(0,no_samples):
 
         # Sample using rejection sampling
-        success = sampler.rejection_sample_pair(no_tries_max,compute_un_probs_first_particle)
+        success = sampler.rejection_sample_pair(no_tries_max=no_tries_max,compute_probs_first_particle=compute_probs_first_particle)
         if not success:
             handle_fail(i)
 
@@ -97,8 +96,9 @@ if __name__ == "__main__":
     plt.figure()
     min_dist = min(ave_dist)
     max_dist = max(ave_dist-min_dist)
-    cols = [str((dist-min_dist) / max_dist) for dist in ave_dist]
+    cols = [(dist-min_dist) / max_dist for dist in ave_dist]
     plt.scatter(posns[:,0],posns[:,1], c=cols, cmap=plt.cm.jet)
+    plt.colorbar()
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(str(N)+ " particles: ave dist of other particle")
@@ -106,8 +106,9 @@ if __name__ == "__main__":
     plt.figure()
     min_count = min(counts)
     max_count = max(counts-min_count)
-    cols = [str((count-min_count) / max_count) for count in counts]
+    cols = [(count-min_count) / max_count for count in counts]
     plt.scatter(posns[:,0],posns[:,1], c=cols, cmap=plt.cm.jet)
+    plt.colorbar()
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(str(N)+ " particles: counts of draws")

@@ -8,8 +8,6 @@ class ProbCalculator:
     Attributes:
     posns (np.array([[float]])): particle positions. First axis are particles, seconds are coordinates in n-dimensional space
     n (int): number of particles
-    std_dev (float): standard deviation for cutting off probabilities
-    std_dev_clip_mult (float): multiplier for the standard deviation cutoff
 
     probs_first_particle (np.array([float])): probabilities for the first particle of length n
     are_probs_first_particle_normalized (bool): bool whether the probabilities are normalized
@@ -34,13 +32,11 @@ class ProbCalculator:
 
 
 
-    def __init__(self, posns, std_dev, std_dev_clip_mult):
+    def __init__(self, posns):
         """Constructor.
 
         Args:
         posns (np.array([[float]])): particle positions. First axis are particles, seconds are coordinates in n-dimensional space
-        std_dev (float): standard deviation for cutting off probabilities
-        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
         """
 
         # Setup the logger
@@ -57,8 +53,6 @@ class ProbCalculator:
         # vars
         self.posns = posns
         self.n = len(self.posns)
-        self.std_dev = std_dev
-        self.std_dev_clip_mult = std_dev_clip_mult
 
         # Initialize all manner of other properties for possible later use
         self._uti = np.array([]).astype(int)
@@ -90,14 +84,16 @@ class ProbCalculator:
 
 
 
-    def add_particle(self, posn):
+    def add_particle(self, idx, posn):
         """Add a particle
 
         Args:
+        idx (int): position at which to insert the particle
         posn (np.array([float])): position in d dimensions
         """
 
-        self.posns.append(posn)
+        # self.posns = np.concatenate((self.posns,np.array([posn])))
+        self.posns = np.insert(self.posns,idx,posn,axis=0)
         self.n += 1
 
 
@@ -109,7 +105,7 @@ class ProbCalculator:
         idx (int): idx of the particle to remove
         """
 
-        del self.posns[idx]
+        self.posns = np.delete(self.posns,idx)
         self.n -= 1
 
 
@@ -126,12 +122,16 @@ class ProbCalculator:
 
 
 
-    def compute_un_probs_first_particle(self):
+    def compute_un_probs_first_particle(self, std_dev, std_dev_clip_mult):
         """Compute un-normalized probabilities for drawing the first particle out of n possible particles.
         After running this, the following arguments will be set:
             probs_first_particle
             are_probs_first_particle_normalized
             max_prob_first_particle
+
+        Args:
+        std_dev (float): standard deviation
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
         """
 
         # Check there are sufficient particles
@@ -148,8 +148,8 @@ class ProbCalculator:
         self._dists_squared = np.sum(dr*dr, axis=1)    # computes distances squared; D is a 4950 x 1 np array
 
         # Clip distances at std_dev_clip_mult * sigma
-        max_dist_squared = pow(self.std_dev_clip_mult*self.std_dev,2)
-        two_var = 2.0 * pow(self.std_dev,2)
+        max_dist_squared = pow(std_dev_clip_mult*std_dev,2)
+        two_var = 2.0 * pow(std_dev,2)
 
         # Eliminate beyond max dist
         stacked = np.array([self._uti[0],self._uti[1],self._dists_squared]).T

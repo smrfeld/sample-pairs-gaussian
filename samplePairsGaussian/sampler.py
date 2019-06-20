@@ -53,12 +53,14 @@ class Sampler:
 
 
 
-    def rejection_sample_first_particle(self, no_tries_max=100, compute_probs=True):
+    def rejection_sample_first_particle(self, no_tries_max=100, compute_probs=True, std_dev=None, std_dev_clip_mult=None):
         """Use rejection sampling to sample the first particle
 
         Args:
         no_tries_max (int): max. no. of tries for rejection sampling
         compute_probs (bool): whether to first call compute_un_probs_first_particle for the ProbCalculator
+        std_dev (float): standard deviation
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
 
         Returns:
         bool: True for success, False for failure
@@ -66,7 +68,10 @@ class Sampler:
 
         # Form probabilities
         if compute_probs:
-            self.prob_calculator.compute_un_probs_first_particle()
+            if std_dev == None or std_dev_clip_mult == None:
+                self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
+                sys.exit(0)
+            self.prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         i_try = 0
         self.idx_first_particle = None
@@ -129,19 +134,24 @@ class Sampler:
 
 
 
-    def rejection_sample_pair(self, no_tries_max=100, compute_probs_first_particle=True):
+    def rejection_sample_pair(self, no_tries_max=100, compute_probs_first_particle=True, std_dev=None, std_dev_clip_mult=None):
         """Use rejection sampling to sample a pair of particles
 
         Args:
         no_tries_max (int): max. no. of tries for rejection sampling
         compute_probs_first_particle (bool): whether to first call compute_probs_first_particle for the ProbCalculator
+        std_dev (float): standard deviation
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
 
         Returns:
         bool: True for success, False for failure
         """
 
         if compute_probs_first_particle:
-            self.prob_calculator.compute_un_probs_first_particle()
+            if std_dev == None or std_dev_clip_mult == None:
+                self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
+                sys.exit(0)
+            self.prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         # Turn off logging temp
         level = self._logger.level
@@ -173,12 +183,14 @@ class Sampler:
 
 
 
-    def cdf_sample_first_particle(self,compute_probs=True):
+    def cdf_sample_first_particle(self,compute_probs=True, std_dev=None, std_dev_clip_mult=None):
         """Sample the first particle by directly calculating the CDF via np.random.choice
         Ensures that the probabilities in the ProbCalculator are normalized before proceeding
 
         Args:
         compute_probs (bool): whether to first call compute_probs_first_particle for the ProbCalculator
+        std_dev (float): standard deviation
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
 
         Returns:
         bool: True for success, False for failure
@@ -186,7 +198,10 @@ class Sampler:
 
         # Form probabilities
         if compute_probs:
-            self.prob_calculator.compute_un_probs_first_particle()
+            if std_dev == None or std_dev_clip_mult == None:
+                self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
+                sys.exit(0)
+            self.prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         # Ensure normalized
         if self.prob_calculator.are_probs_first_particle_normalized == False:
@@ -229,18 +244,23 @@ class Sampler:
 
 
 
-    def cdf_sample_pair(self, compute_probs_first_particle=True):
+    def cdf_sample_pair(self, compute_probs_first_particle=True, std_dev=None, std_dev_clip_mult=None):
         """Sample both particles directly using numpy.random.choice
 
         Args:
         compute_probs_first_particle (bool): whether to first call compute_probs_first_particle for the ProbCalculator
+        std_dev (float): standard deviation
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
 
         Returns:
         bool: True for success, False for failure
         """
 
         if compute_probs_first_particle:
-            self.prob_calculator.compute_un_probs_first_particle()
+            if std_dev == None or std_dev_clip_mult == None:
+                self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
+                sys.exit(0)
+            self.prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         # Ensure normalized
         if self.prob_calculator.are_probs_first_particle_normalized == False:

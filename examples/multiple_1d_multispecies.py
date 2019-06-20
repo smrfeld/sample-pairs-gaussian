@@ -27,15 +27,9 @@ if __name__ == "__main__":
 
     # Setup the sampler
 
-    # Cutoff counting probabilities for particles that are more than:
-    # std_dev_clip_mult * std_dev
-    # away from each-other
-    std_dev = 10.0
-    std_dev_clip_mult = 3.0
-
     # Make the probability calculator
-    prob_calculator_A = ProbCalculator(posns_A,std_dev,std_dev_clip_mult)
-    prob_calculator_B = ProbCalculator(posns_B,std_dev,std_dev_clip_mult)
+    prob_calculator_A = ProbCalculator(posns_A)
+    prob_calculator_B = ProbCalculator(posns_B)
     species_arr = ["A","B"]
     prob_calculator = ProbCalculatorMultiSpecies([prob_calculator_A,prob_calculator_B],species_arr)
 
@@ -50,14 +44,20 @@ if __name__ == "__main__":
         print("Could not draw particle: try adjusting the std. dev. for the probability cutoff.")
         sys.exit(0)
 
+    # Cutoff counting probabilities for particles that are more than:
+    # std_dev_clip_mult * std_dev
+    # away from each-other
+    std_dev = 10.0
+    std_dev_clip_mult = 3.0
+
     # For efficiency, just compute the first particle probability now
-    prob_calculator_A.compute_un_probs_first_particle()
-    prob_calculator_B.compute_un_probs_first_particle()
-    compute_un_probs_first_particle = False
+    prob_calculator_A.compute_un_probs_first_particle(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
+    prob_calculator_B.compute_un_probs_first_particle(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
+    compute_probs_first_particle = False
 
     # Also compute the species probs
     prob_calculator.compute_species_probs()
-    compute_species_probs = False
+    compute_probs_species = False
 
     no_samples = 1000
     no_tries_max = 100
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     for i in range(0,no_samples):
 
         # Sample using rejection sampling
-        success = sampler.rejection_sample_pair(no_tries_max,compute_species_probs,compute_un_probs_first_particle)
+        success = sampler.rejection_sample_pair(no_tries_max=no_tries_max,compute_probs_species=compute_probs_species,compute_probs_first_particle=compute_probs_first_particle)
         if not success:
             handle_fail()
 
