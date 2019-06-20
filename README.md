@@ -9,7 +9,11 @@ Python 3 & Numpy.
 
 ## Installation and usage
 
-The usual:
+Use `pip`:
+```
+pip install samplePairsGaussian
+```
+or manually:
 ```
 python setup.py install
 ```
