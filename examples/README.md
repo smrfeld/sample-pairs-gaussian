@@ -8,26 +8,25 @@ The main steps are:
 
 1. Create particle positions. This should be a numpy array of dimensions `n x d`, where `n` is the number of particles and `d` is the dimension of each point (all dimensions 1D, 2D, 3D or higher are possible).
 
-2. Create the probability calculator `ProbCalculator` object. This requires the particle positions, as well as two additional arguments:
-  * `std_dev` - the standard deviation of the Gaussian.
-  * `std_dev_clip_mult` - a multiplier for cutting off the probabilities. For a given particle, particles that are further than `std_dev_clip_mult * std_dev` away are not considered for draws.
-
-  If this value is too low, only particles very close to each-other are considered for pairs, and the method is inaccurate (or fails). If this value is too high, the sampling is very inefficient, especially using rejection sampling since many particles far away from one another are considered as candidates.
-
-  A good value here is e.g. `std_dev_clip_mult = 3`, such that `99.73%` of the full distribution is used.
+2. Create the probability calculator `ProbCalculator` object. This requires the particle positions.
 
 3. Create the sampler `Sampler` object. This takes the `ProbCalculator` from the previous step.
 
 4. Sample using:
   * Rejection sampling as follows:
   ```
-  success = sampler.rejection_sample_pair_particles(no_tries_max)
+  success = sampler.rejection_sample_pair_particles(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult,no_tries_max=no_tries_max)
   ```
-  where `success` will be a Boolean, and `no_tries_max` is the number of tries before quitting.
+  where `success` will be a Boolean, and `no_tries_max` is the number of tries before quitting, and:
+  * `std_dev` - the standard deviation of the Gaussian.
+  * `std_dev_clip_mult` - a multiplier for cutting off the probabilities. For a given particle, particles that are further than `std_dev_clip_mult * std_dev` away are not considered for draws.
+  If this value is too low, only particles very close to each-other are considered for pairs, and the method is inaccurate (or fails). If this value is too high, the sampling is very inefficient, especially using rejection sampling since many particles far away from one another are considered as candidates.
+
+  A good value here is e.g. `std_dev_clip_mult = 3`, such that `99.73%` of the full distribution is used.
 
   * Computing the CDF (i.e. through `numpy.random.choice` with weighted probabilities) as follows:
   ```
-  success = sampler.cdf_sample_pair_particles()
+  success = sampler.cdf_sample_pair_particles(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
   ```
 
 ## Drawing multiple pairs of particles in 1D
