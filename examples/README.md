@@ -67,3 +67,17 @@ The module supports points in any spatial dimension, although samples are more d
 For each particle, the average distance to the neighbor it was drawn with. At the outer edge, particles are not drawn because the chosen std. dev. (=1.0) is too small (for these particle, no other particle is close enough to be drawn). At the center, where many draws occur (see previous figure), the length scale is related to the chosen std. dev. of the Gaussian. As we move closer to the edge, the average distance between sampled pairs increases (although the count of draws for these particles decreases as shown in the previous figure) because particles become more sparse.
 
 <img src="figures/sample_2d_ave_dist.png" width="300">
+
+## Multiple species
+
+Drawing two particles of the **same species** from a collection of multiple species is also supported.
+
+A simple example is `simple_multispecies.py`, which should be the self-explanatory generalization of `simple.py`.
+
+A further example is `multiple_1d_multispecies.py`, where two populations `A`,`B` exist.
+
+<img src="figures/multiple_1d_multispecies_A.png" width="300">
+<img src="figures/multiple_1d_multispecies_B.png" width="300">
+<img src="figures/multiple_1d_multispecies.png" width="300">
+
+where `A` is in red and `B` in blue.

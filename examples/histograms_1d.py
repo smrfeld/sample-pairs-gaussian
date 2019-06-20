@@ -46,8 +46,8 @@ if __name__ == "__main__":
         prob_calculator.std_dev_clip_mult = std_dev_clip_mult
 
         # For efficiency, just compute the first particle probability now
-        prob_calculator.compute_probs_first_particle()
-        compute_probs_first_particle = False
+        prob_calculator.compute_un_probs_first_particle()
+        compute_un_probs_first_particle = False
 
         no_tries_max = 100
         idxs_1 = []
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         for i in range(0,no_samples):
 
             # Sample using rejection sampling
-            success = sampler.rejection_sample_pair(no_tries_max,compute_probs_first_particle)
+            success = sampler.rejection_sample_pair(no_tries_max,compute_un_probs_first_particle)
             if not success:
                 handle_fail()
 

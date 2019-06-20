@@ -44,6 +44,12 @@ A key way this library reduces computational cost is by introducing a cutoff for
 
 In general, we avoid all use of for loops, and rely extensively on array operations using numpy.
 
+### Multiple species
+
+Multiple species are also supported, where we have multiple species but want to draw two particles of the **same species** (two particles of any species can be done by simply ignoring the species labels).
+
+Specifically, the classes `ProbCalculatorMultiSpecies` and `SamplerMultiSpecies` implement this.
+
 ## Examples
 
 See the [examples](examples) folder.

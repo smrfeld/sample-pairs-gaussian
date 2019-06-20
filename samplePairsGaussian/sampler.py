@@ -58,7 +58,7 @@ class Sampler:
 
         Args:
         no_tries_max (int): max. no. of tries for rejection sampling
-        compute_probs (bool): whether to first call compute_probs_first_particle for the ProbCalculator
+        compute_probs (bool): whether to first call compute_un_probs_first_particle for the ProbCalculator
 
         Returns:
         bool: True for success, False for failure
@@ -66,7 +66,7 @@ class Sampler:
 
         # Form probabilities
         if compute_probs:
-            self.prob_calculator.compute_probs_first_particle()
+            self.prob_calculator.compute_un_probs_first_particle()
 
         i_try = 0
         self.idx_first_particle = None
@@ -103,7 +103,7 @@ class Sampler:
 
         # Form probabilities
         if compute_probs:
-            self.prob_calculator.compute_probs_second_particle(self.idx_first_particle)
+            self.prob_calculator.compute_un_probs_second_particle(self.idx_first_particle)
 
         i_try = 0
         self.idx_second_particle = None
@@ -141,7 +141,7 @@ class Sampler:
         """
 
         if compute_probs_first_particle:
-            self.prob_calculator.compute_probs_first_particle()
+            self.prob_calculator.compute_un_probs_first_particle()
 
         # Turn off logging temp
         level = self._logger.level
@@ -186,7 +186,7 @@ class Sampler:
 
         # Form probabilities
         if compute_probs:
-            self.prob_calculator.compute_probs_first_particle()
+            self.prob_calculator.compute_un_probs_first_particle()
 
         # Ensure normalized
         if self.prob_calculator.are_probs_first_particle_normalized == False:
@@ -214,7 +214,7 @@ class Sampler:
 
         # Form probabilities
         if compute_probs:
-            self.prob_calculator.compute_probs_second_particle(self.idx_first_particle)
+            self.prob_calculator.compute_un_probs_second_particle(self.idx_first_particle)
 
         # Ensure normalized
         if self.prob_calculator.are_probs_second_particle_normalized == False:
@@ -240,7 +240,7 @@ class Sampler:
         """
 
         if compute_probs_first_particle:
-            self.prob_calculator.compute_probs_first_particle()
+            self.prob_calculator.compute_un_probs_first_particle()
 
         # Ensure normalized
         if self.prob_calculator.are_probs_first_particle_normalized == False:

@@ -22,8 +22,9 @@ if __name__ == "__main__":
     # Number of particles
     N = 100
 
-    # Positions
-    posns = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
+    # Positions for two species
+    posns_A = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
+    posns_B = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
 
     # Setup the sampler
 
@@ -34,10 +35,13 @@ if __name__ == "__main__":
     std_dev_clip_mult = 3.0
 
     # Make the probability calculator
-    prob_calculator = ProbCalculator(posns,std_dev,std_dev_clip_mult)
+    prob_calculator_A = ProbCalculator(posns_A,std_dev,std_dev_clip_mult)
+    prob_calculator_B = ProbCalculator(posns_B,std_dev,std_dev_clip_mult)
+    species_arr = ["A","B"]
+    prob_calculator = ProbCalculatorMultiSpecies([prob_calculator_A,prob_calculator_B],species_arr)
 
     # Make the sampler
-    sampler = Sampler(prob_calculator)
+    sampler = SamplerMultiSpecies(prob_calculator)
     sampler.set_logging_level(logging.INFO)
 
     # Handle failure

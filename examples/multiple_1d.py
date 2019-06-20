@@ -47,8 +47,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     # For efficiency, just compute the first particle probability now
-    prob_calculator.compute_probs_first_particle()
-    compute_probs_first_particle = False
+    prob_calculator.compute_un_probs_first_particle()
+    compute_un_probs_first_particle = False
 
     no_samples = 1000
     no_tries_max = 100
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     for i in range(0,no_samples):
 
         # Sample using rejection sampling
-        success = sampler.rejection_sample_pair(no_tries_max,compute_probs_first_particle)
+        success = sampler.rejection_sample_pair(no_tries_max,compute_un_probs_first_particle)
         if not success:
             handle_fail()
 
