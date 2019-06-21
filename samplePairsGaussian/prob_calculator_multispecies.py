@@ -33,8 +33,9 @@ class ProbCalculatorMultiSpecies:
 
         # Length
         if len(species_arr) != len(prob_calculator_arr):
+            self._logger.info("> samplePairsGaussian <")
             self._logger.error("Error: length of species array = " + str(len(species_arr)) + " does not match the probabilities: " + str(len(prob_calculator_arr)) + "; Quitting.")
-            sys.exit(0)
+            sys.exit(1)
 
         # vars
         self.no_species = len(species_arr)
@@ -55,12 +56,28 @@ class ProbCalculatorMultiSpecies:
 
 
 
+    def get_prob_calculator_for_species(self, species):
+        """Get prob calculator for a species
+
+        Args:
+        species (str): the species
+        """
+        idx_species = self.species_arr.index(species)
+        return self.prob_calculator_arr[idx_species]
+
+
+
     def compute_species_probs(self):
         """Compute probabilities for the different species.
         """
 
         self.probs_species = np.zeros(self.no_species)
         for i in range(0,self.no_species):
-            self.probs_species[i] = self.prob_calculator_arr[i].n
-        self.n_total = np.sum(self.probs_species)
-        self.probs_species /= self.n_total
+            # Reject if there are not at least 2 particles
+            n = self.prob_calculator_arr[i].n
+            if n >= 2:
+                self.probs_species[i] = n
+            else:
+                self.probs_species[i] = 0
+        n_total = np.sum(self.probs_species)
+        self.probs_species /= n_total

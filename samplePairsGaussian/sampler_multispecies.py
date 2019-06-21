@@ -78,10 +78,12 @@ class SamplerMultiSpecies:
         # Form probabilities
         if compute_probs:
             if std_dev == None or std_dev_clip_mult == None:
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(0)
+                sys.exit(1)
             for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
-                prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
+                if prob_calculator.n >= 2:
+                    prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         i_try = 0
         self.idx_first_particle = None
@@ -90,21 +92,24 @@ class SamplerMultiSpecies:
 
             # Random species
             idx_species = np.random.choice(range(0,self.prob_calculator_multispecies.no_species), 1, p=self.prob_calculator_multispecies.probs_species)[0]
+            prob_calculator = self.prob_calculator_multispecies.prob_calculator_arr[idx_species]
 
             # Random particle of this species (uniform)
-            idx_particle = np.random.randint(self.prob_calculator_multispecies.prob_calculator_arr[idx_species].n)
+            idx_particle = np.random.randint(prob_calculator.n)
 
             # Rejection sampling
-            r = np.random.uniform(0.0,self.prob_calculator_multispecies.prob_calculator_arr[idx_species].max_prob_first_particle)
-            if r < self.prob_calculator_multispecies.prob_calculator_arr[idx_species].probs_first_particle[idx_particle]:
+            r = np.random.uniform(0.0,prob_calculator.max_prob_first_particle)
+            if r < prob_calculator.probs_first_particle[idx_particle]:
                 # Accept
                 self.idx_first_particle = idx_particle
                 self.idx_species_particles = idx_species
                 self.species_particles = self.prob_calculator_multispecies.species_arr[idx_species]
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.info("Accepted first particle species: " + str(self.species_particles) + " idx: " + str(idx_particle) + " after: " + str(i_try) + " tries")
                 return True
 
         # Getting here means failure
+        self._logger.info("> samplePairsGaussian <")
         self._logger.error("Error! Could not sample the first particle after: " + str(i_try) + " tries.")
         return False
 
@@ -139,11 +144,13 @@ class SamplerMultiSpecies:
                 # Accept
                 self.idx_second_particle = self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].idxs_possible_second_particle[idx]
 
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.info("Accepted second particle species: " + str(self.species_particles) + " idx: " + str(idx) + " after: " + str(i_try) + " tries")
 
                 return True
 
         # Getting here means failure
+        self._logger.info("> samplePairsGaussian <")
         self._logger.error("Error! Could not sample the second particle after: " + str(no_tries_max) + " tries.")
         return False
 
@@ -170,10 +177,12 @@ class SamplerMultiSpecies:
         # Form probabilities
         if compute_probs_first_particle:
             if std_dev == None or std_dev_clip_mult == None:
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(0)
+                sys.exit(1)
             for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
-                prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
+                if prob_calculator.n >= 2:
+                    prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         # Turn off logging temp
         level = self._logger.level
@@ -194,12 +203,14 @@ class SamplerMultiSpecies:
             # Set logging back
             self._logger.setLevel(level)
 
+            self._logger.info("> samplePairsGaussian <")
             self._logger.info("Accepted pair particles species: " + str(self.species_particles) + " idxs: " + str(self.idx_first_particle) + " " + str(self.idx_second_particle) + " after: " + str(i_try) + " tries")
 
             # Done
             return True
 
         # Getting here means failure
+        self._logger.info("> samplePairsGaussian <")
         self._logger.error("Error! Could not sample the two particles after: " + str(no_tries_max) + " tries.")
         return False
 
@@ -226,8 +237,9 @@ class SamplerMultiSpecies:
         # Form probabilities
         if compute_probs:
             if std_dev == None or std_dev_clip_mult == None:
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(0)
+                sys.exit(1)
             for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
                 prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
@@ -243,6 +255,7 @@ class SamplerMultiSpecies:
         # Choose particle
         self.idx_first_particle = np.random.choice(range(0,self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].n), 1, p=self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].probs_first_particle)[0]
 
+        self._logger.info("> samplePairsGaussian <")
         self._logger.info("CDF sampled first particle species: " + str(self.species_particles) + " idx: " + str(self.idx_first_particle))
 
         return True
@@ -271,6 +284,7 @@ class SamplerMultiSpecies:
         # Choose
         self.idx_second_particle = np.random.choice(self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].idxs_possible_second_particle, 1, p=self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].probs_second_particle)[0]
 
+        self._logger.info("> samplePairsGaussian <")
         self._logger.info("CDF sampled second particle species: " + str(self.species_particles) + " idx: " + str(self.idx_second_particle))
 
         return True
@@ -297,8 +311,9 @@ class SamplerMultiSpecies:
         # Form probabilities
         if compute_probs_first_particle:
             if std_dev == None or std_dev_clip_mult == None:
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(0)
+                sys.exit(1)
             for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
                 prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
@@ -314,17 +329,20 @@ class SamplerMultiSpecies:
         success = self.cdf_sample_first_particle(compute_probs_species=False, compute_probs=False)
         if not success:
             self._logger.setLevel(level)
+            self._logger.info("> samplePairsGaussian <")
             self._logger.error("Error! Could not sample the two particles using cdf_sample_pair.")
             return False
 
         success = self.cdf_sample_second_particle(compute_probs=True)
         if not success:
             self._logger.setLevel(level)
+            self._logger.info("> samplePairsGaussian <")
             self._logger.error("Error! Could not sample the two particles using cdf_sample_pair.")
             return False
 
         # Set logging back
         self._logger.setLevel(level)
+        self._logger.info("> samplePairsGaussian <")
         self._logger.info("CDF sampled pair particle species: " + str(self.species_particles) + " idxs: " + str(self.idx_first_particle) + " " + str(self.idx_second_particle))
 
         # Done

@@ -92,7 +92,6 @@ class ProbCalculator:
         posn (np.array([float])): position in d dimensions
         """
 
-        # self.posns = np.concatenate((self.posns,np.array([posn])))
         self.posns = np.insert(self.posns,idx,posn,axis=0)
         self.n += 1
 
@@ -105,7 +104,7 @@ class ProbCalculator:
         idx (int): idx of the particle to remove
         """
 
-        self.posns = np.delete(self.posns,idx)
+        self.posns = np.delete(self.posns,idx,axis=0)
         self.n -= 1
 
 
@@ -136,8 +135,9 @@ class ProbCalculator:
 
         # Check there are sufficient particles
         if self.n < 2:
+            self._logger.info("> samplePairsGaussian <")
             self._logger.error("Error: computing distances for: " + str(self.n) + " particles. This can't work! Quitting.")
-            sys.exit(0)
+            sys.exit(1)
 
         # uti is a list of two (1-D) numpy arrays
         # containing the indices of the upper triangular matrix
@@ -145,6 +145,7 @@ class ProbCalculator:
 
         # uti[0] is i, and uti[1] is j from the previous example
         dr = self.posns[self._uti[0]] - self.posns[self._uti[1]]            # computes differences between particle positions
+        print(dr)
         self._dists_squared = np.sum(dr*dr, axis=1)    # computes distances squared; D is a 4950 x 1 np array
 
         # Clip distances at std_dev_clip_mult * sigma

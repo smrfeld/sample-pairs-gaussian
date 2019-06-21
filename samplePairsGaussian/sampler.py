@@ -69,8 +69,9 @@ class Sampler:
         # Form probabilities
         if compute_probs:
             if std_dev == None or std_dev_clip_mult == None:
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(0)
+                sys.exit(1)
             self.prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         i_try = 0
@@ -86,10 +87,12 @@ class Sampler:
             if r < self.prob_calculator.probs_first_particle[idx]:
                 # Accept
                 self.idx_first_particle = idx
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.info("Accepted first particle idx: " + str(idx) + " after: " + str(i_try) + " tries")
                 return True
 
         # Getting here means failure
+        self._logger.info("> samplePairsGaussian <")
         self._logger.error("Error! Could not sample the first particle after: " + str(i_try) + " tries.")
         return False
 
@@ -124,11 +127,13 @@ class Sampler:
                 # Accept
                 self.idx_second_particle = self.prob_calculator.idxs_possible_second_particle[idx]
 
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.info("Accepted second particle idx: " + str(idx) + " after: " + str(i_try) + " tries")
 
                 return True
 
         # Getting here means failure
+        self._logger.info("> samplePairsGaussian <")
         self._logger.error("Error! Could not sample the second particle after: " + str(no_tries_max) + " tries.")
         return False
 
@@ -149,8 +154,9 @@ class Sampler:
 
         if compute_probs_first_particle:
             if std_dev == None or std_dev_clip_mult == None:
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(0)
+                sys.exit(1)
             self.prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         # Turn off logging temp
@@ -172,12 +178,14 @@ class Sampler:
             # Set logging back
             self._logger.setLevel(level)
 
+            self._logger.info("> samplePairsGaussian <")
             self._logger.info("Accepted pair particles idxs: " + str(self.idx_first_particle) + " " + str(self.idx_second_particle) + " after: " + str(i_try) + " tries")
 
             # Done
             return True
 
         # Getting here means failure
+        self._logger.info("> samplePairsGaussian <")
         self._logger.error("Error! Could not sample the two particles after: " + str(no_tries_max) + " tries.")
         return False
 
@@ -199,8 +207,9 @@ class Sampler:
         # Form probabilities
         if compute_probs:
             if std_dev == None or std_dev_clip_mult == None:
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(0)
+                sys.exit(1)
             self.prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         # Ensure normalized
@@ -210,6 +219,7 @@ class Sampler:
         # Choose
         self.idx_first_particle = np.random.choice(range(0,self.prob_calculator.n), 1, p=self.prob_calculator.probs_first_particle)[0]
 
+        self._logger.info("> samplePairsGaussian <")
         self._logger.info("CDF sampled first particle idx: " + str(self.idx_first_particle))
 
         return True
@@ -238,6 +248,7 @@ class Sampler:
         # Choose
         self.idx_second_particle = np.random.choice(self.prob_calculator.idxs_possible_second_particle, 1, p=self.prob_calculator.probs_second_particle)[0]
 
+        self._logger.info("> samplePairsGaussian <")
         self._logger.info("CDF sampled second particle idx: " + str(self.idx_second_particle))
 
         return True
@@ -258,8 +269,9 @@ class Sampler:
 
         if compute_probs_first_particle:
             if std_dev == None or std_dev_clip_mult == None:
+                self._logger.info("> samplePairsGaussian <")
                 self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(0)
+                sys.exit(1)
             self.prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
 
         # Ensure normalized
@@ -273,17 +285,20 @@ class Sampler:
         success = self.cdf_sample_first_particle(compute_probs=False)
         if not success:
             self._logger.setLevel(level)
+            self._logger.info("> samplePairsGaussian <")
             self._logger.error("Error! Could not sample the two particles using cdf_sample_pair.")
             return False
 
         success = self.cdf_sample_second_particle(compute_probs=True)
         if not success:
             self._logger.setLevel(level)
+            self._logger.info("> samplePairsGaussian <")
             self._logger.error("Error! Could not sample the two particles using cdf_sample_pair.")
             return False
 
         # Set logging back
         self._logger.setLevel(level)
+        self._logger.info("> samplePairsGaussian <")
         self._logger.info("CDF sampled pair particle idxs: " + str(self.idx_first_particle) + " " + str(self.idx_second_particle))
 
         # Done
