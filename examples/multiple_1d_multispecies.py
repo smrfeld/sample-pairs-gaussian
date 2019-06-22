@@ -53,11 +53,9 @@ if __name__ == "__main__":
     # For efficiency, just compute the first particle probability now
     prob_calculator_A.compute_un_probs_first_particle(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
     prob_calculator_B.compute_un_probs_first_particle(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
-    compute_probs_first_particle = False
 
     # Also compute the species probs
     prob_calculator.compute_species_probs()
-    compute_probs_species = False
 
     no_samples = 1000
     no_tries_max = 100
@@ -66,13 +64,14 @@ if __name__ == "__main__":
     for i in range(0,no_samples):
 
         # Sample using rejection sampling
-        success = sampler.rejection_sample_pair(no_tries_max=no_tries_max,compute_probs_species=compute_probs_species,compute_probs_first_particle=compute_probs_first_particle)
+        success = sampler.rejection_sample_pair_given_nonzero_probs_for_first_particle(no_tries_max=no_tries_max)
         if not success:
             handle_fail()
 
         # Alternatively sample using CDF
-        # sampler.cdf_sample_first_particle()
-        # sampler.cdf_sample_second_particle()
+        #success = sampler.cdf_sample_pair_given_nonzero_probs_for_first_particle()
+        #if not success:
+        #    handle_fail()
 
         # Append
         idxs_1[sampler.species_particles].append(sampler.idx_first_particle)

@@ -39,6 +39,7 @@ class ProbCalculatorMultiSpecies:
 
         # vars
         self.no_species = len(species_arr)
+        self.no_species_possible = self.no_species
         self.prob_calculator_arr = prob_calculator_arr
         self.species_arr = species_arr
 
@@ -53,6 +54,23 @@ class ProbCalculatorMultiSpecies:
         level (logging): logging level
         """
         self._logger.setLevel(level)
+
+
+
+    def compute_un_probs_first_particle_for_all_species(self, std_dev, std_dev_clip_mult):
+        """Compute un-normalized probabilities for drawing the first particle out of n possible particles.
+        """
+        for prob_calculator in self.prob_calculator_arr:
+            prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
+
+
+
+    def ensure_probs_first_particle_are_normalized_for_all_species(self):
+        """Normalize the probs for the first particle
+        """
+        for prob_calculator in self.prob_calculator_arr:
+            if not prob_calculator.are_probs_first_particle_normalized:
+                prob_calculator.normalize_probs_first_particle()
 
 
 
@@ -71,13 +89,19 @@ class ProbCalculatorMultiSpecies:
         """Compute probabilities for the different species.
         """
 
+        self.no_species_possible = self.no_species
         self.probs_species = np.zeros(self.no_species)
         for i in range(0,self.no_species):
             # Reject if there are not at least 2 particles
-            n = self.prob_calculator_arr[i].n
-            if n >= 2:
-                self.probs_species[i] = n
+            no_idxs_possible_first_particle = self.prob_calculator_arr[i].no_idxs_possible_first_particle
+            if no_idxs_possible_first_particle >= 2:
+                self.probs_species[i] = no_idxs_possible_first_particle
             else:
                 self.probs_species[i] = 0
         n_total = np.sum(self.probs_species)
-        self.probs_species /= n_total
+
+        if n_total > 0.:
+            self.probs_species /= n_total
+        else:
+            self.probs_species = np.zeros(self.no_species)
+            self.no_species_possible = 0

@@ -62,13 +62,16 @@ class ProbCalculator:
         self._uti0filter = np.array([]).astype(int)
         self._uti1filter = np.array([]).astype(int)
         self._gauss = np.array([])
-        self.probs_first_particle = np.array([])
+
+        self.idxs_possible_first_particle = np.array([]).astype(int)
+        self.no_idxs_possible_first_particle = 0
+        self.probs_first_particle = np.array([]).astype(float)
         self.are_probs_first_particle_normalized = False
         self.max_prob_first_particle = 0.0
 
         self.idxs_possible_second_particle = np.array([]).astype(int)
         self.no_idxs_possible_second_particle = 0
-        self.probs_second_particle = np.array([])
+        self.probs_second_particle = np.array([]).astype(float)
         self.are_probs_second_particle_normalized = False
         self.max_prob_second_particle = 0.0
 
@@ -135,9 +138,12 @@ class ProbCalculator:
 
         # Check there are sufficient particles
         if self.n < 2:
-            self._logger.info("> samplePairsGaussian <")
-            self._logger.error("Error: computing distances for: " + str(self.n) + " particles. This can't work! Quitting.")
-            sys.exit(1)
+            self.idxs_possible_first_particle = np.array([]).astype(int)
+            self.probs_first_particle = np.array([]).astype(float)
+            self.no_idxs_possible_first_particle = 0
+            self.are_probs_first_particle_normalized = False
+            self.max_prob_first_particle = 0.0
+            return
 
         # uti is a list of two (1-D) numpy arrays
         # containing the indices of the upper triangular matrix
@@ -145,7 +151,6 @@ class ProbCalculator:
 
         # uti[0] is i, and uti[1] is j from the previous example
         dr = self.posns[self._uti[0]] - self.posns[self._uti[1]]            # computes differences between particle positions
-        print(dr)
         self._dists_squared = np.sum(dr*dr, axis=1)    # computes distances squared; D is a 4950 x 1 np array
 
         # Clip distances at std_dev_clip_mult * sigma
@@ -162,7 +167,11 @@ class ProbCalculator:
         self._gauss = np.exp(-self._dists_squared_filter/two_var)
 
         # Not normalized probs for first particle
-        self.probs_first_particle = np.bincount(self._uti0filter,self._gauss,minlength=self.n) + np.bincount(self._uti1filter,self._gauss,minlength=self.n)
+        probs_all = np.bincount(self._uti0filter,self._gauss,minlength=self.n) + np.bincount(self._uti1filter,self._gauss,minlength=self.n)
+        non_zero_entries = probs_all > 0.
+        self.idxs_possible_first_particle = np.array(range(0,self.n))[non_zero_entries]
+        self.probs_first_particle = probs_all[non_zero_entries]
+        self.no_idxs_possible_first_particle = len(self.idxs_possible_first_particle)
         self.are_probs_first_particle_normalized = False
         self.max_prob_first_particle = max(self.probs_first_particle)
 

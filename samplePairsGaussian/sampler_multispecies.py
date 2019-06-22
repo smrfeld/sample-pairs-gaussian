@@ -1,4 +1,5 @@
 from .prob_calculator_multispecies import *
+from .sampler import *
 
 import numpy as np
 
@@ -7,6 +8,7 @@ class SamplerMultiSpecies:
 
     Attributes:
     prob_calculator_multispecies (ProbCalculatorMultiSpecies): probability calculator
+    samplers ([Sampler]): sampler for each species
     idx_first_particle (int): idx of the first particle chosen
     idx_second_particle (int): idx of the second particle chosen
     idx_species_particles (int): idx of the species of both particles
@@ -39,6 +41,10 @@ class SamplerMultiSpecies:
         # Prob prob_calculator
         self.prob_calculator_multispecies = prob_calculator_multispecies
 
+        self.samplers = []
+        for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
+            self.samplers.append(Sampler(prob_calculator))
+
         # Init all other structures
         self.idx_species_particles = None
         self.species_particles = None
@@ -57,11 +63,10 @@ class SamplerMultiSpecies:
 
 
 
-    def rejection_sample_first_particle(self, no_tries_max=100, compute_probs_species=True, compute_probs=True, std_dev=None, std_dev_clip_mult=None):
-        """Use rejection sampling to sample the first particle
+    def sample_species(self, std_dev, std_dev_clip_mult):
+        """Sample the species
 
         Args:
-        no_tries_max (int): max. no. of tries for rejection sampling
         compute_probs_species (bool): whether to first call compute_probs_species for the ProbCalculatorMultiSpecies
         compute_probs (bool): whether to first call compute_probs_first_particle for the ProbCalculatorMultiSpecies
         std_dev (float): standard deviation
@@ -71,137 +76,188 @@ class SamplerMultiSpecies:
         bool: True for success, False for failure
         """
 
-        # Form probabilities for species
-        if compute_probs_species:
-            self.prob_calculator_multispecies.compute_species_probs()
-
         # Form probabilities
-        if compute_probs:
-            if std_dev == None or std_dev_clip_mult == None:
-                self._logger.info("> samplePairsGaussian <")
-                self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(1)
-            for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
-                if prob_calculator.n >= 2:
-                    prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
+        self.prob_calculator_multispecies.compute_un_probs_first_particle_for_all_species(std_dev, std_dev_clip_mult)
 
-        i_try = 0
-        self.idx_first_particle = None
-        while self.idx_first_particle == None and i_try < no_tries_max:
-            i_try += 1
+        # Form probabilities for species
+        self.prob_calculator_multispecies.compute_species_probs()
 
-            # Random species
-            idx_species = np.random.choice(range(0,self.prob_calculator_multispecies.no_species), 1, p=self.prob_calculator_multispecies.probs_species)[0]
-            prob_calculator = self.prob_calculator_multispecies.prob_calculator_arr[idx_species]
-
-            # Random particle of this species (uniform)
-            idx_particle = np.random.randint(prob_calculator.n)
-
-            # Rejection sampling
-            r = np.random.uniform(0.0,prob_calculator.max_prob_first_particle)
-            if r < prob_calculator.probs_first_particle[idx_particle]:
-                # Accept
-                self.idx_first_particle = idx_particle
-                self.idx_species_particles = idx_species
-                self.species_particles = self.prob_calculator_multispecies.species_arr[idx_species]
-                self._logger.info("> samplePairsGaussian <")
-                self._logger.info("Accepted first particle species: " + str(self.species_particles) + " idx: " + str(idx_particle) + " after: " + str(i_try) + " tries")
-                return True
-
-        # Getting here means failure
-        self._logger.info("> samplePairsGaussian <")
-        self._logger.error("Error! Could not sample the first particle after: " + str(i_try) + " tries.")
-        return False
+        # Sample
+        return self.sample_species_given_nonzero_probs()
 
 
-
-    def rejection_sample_second_particle(self, no_tries_max=100, compute_probs=True):
-        """Use rejection sampling to sample the second particle
-
-        Args:
-        no_tries_max (int): max. no. of tries for rejection sampling
-        compute_probs (bool): whether to first call compute_probs_second_particle for the ProbCalculator
+    def sample_species_given_nonzero_probs(self):
+        """Sample the species
 
         Returns:
         bool: True for success, False for failure
         """
 
-        # Form probabilities
-        if compute_probs:
-            self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].compute_un_probs_second_particle(self.idx_first_particle)
+        # Reset current
+        self.idx_species_particles = None
+        self.species_particles = None
 
-        i_try = 0
-        self.idx_second_particle = None
-        while self.idx_second_particle == None and i_try < no_tries_max:
-            i_try += 1
-
-            # Random particle (uniform)
-            idx = np.random.randint(self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].no_idxs_possible_second_particle)
-
-            # Rejection sampling
-            r = np.random.uniform(0.0,self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].max_prob_second_particle)
-            if r < self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].probs_second_particle[idx]:
-                # Accept
-                self.idx_second_particle = self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].idxs_possible_second_particle[idx]
-
-                self._logger.info("> samplePairsGaussian <")
-                self._logger.info("Accepted second particle species: " + str(self.species_particles) + " idx: " + str(idx) + " after: " + str(i_try) + " tries")
-
-                return True
-
-        # Getting here means failure
-        self._logger.info("> samplePairsGaussian <")
-        self._logger.error("Error! Could not sample the second particle after: " + str(no_tries_max) + " tries.")
-        return False
+        # Sample
+        if self.prob_calculator_multispecies.no_species > 0:
+            self.idx_species_particles = np.random.choice(range(0,self.prob_calculator_multispecies.no_species), 1, p=self.prob_calculator_multispecies.probs_species)[0]
+            self.species_particles = self.prob_calculator_multispecies.species_arr[self.idx_species_particles]
+            return True
+        else:
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("Fail: Could not sample the species because no species has enough particles.")
+            return False
 
 
 
-    def rejection_sample_pair(self, no_tries_max=100, compute_probs_species=True, compute_probs_first_particle=True, std_dev=None, std_dev_clip_mult=None):
-        """Use rejection sampling to sample a pair of particles
+    def rejection_sample_first_particle(self, std_dev, std_dev_clip_mult, no_tries_max=100):
+        """Use rejection sampling to sample the first particle
 
         Args:
-        no_tries_max (int): max. no. of tries for rejection sampling
-        compute_probs_species (bool): whether to first call compute_probs_species for the ProbCalculatorMultiSpecies
-        compute_probs_first_particle (bool): whether to first call compute_probs_first_particle for the ProbCalculator
         std_dev (float): standard deviation
         std_dev_clip_mult (float): multiplier for the standard deviation cutoff
+        no_tries_max (int): max. no. of tries for rejection sampling
 
         Returns:
         bool: True for success, False for failure
         """
 
-        # Form probabilities for species
-        if compute_probs_species:
-            self.prob_calculator_multispecies.compute_species_probs()
-
         # Form probabilities
-        if compute_probs_first_particle:
-            if std_dev == None or std_dev_clip_mult == None:
-                self._logger.info("> samplePairsGaussian <")
-                self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(1)
-            for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
-                if prob_calculator.n >= 2:
-                    prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
+        self.prob_calculator_multispecies.compute_un_probs_first_particle_for_all_species(std_dev, std_dev_clip_mult)
 
-        # Turn off logging temp
-        level = self._logger.level
-        self._logger.setLevel(logging.CRITICAL)
+        # Form probabilities for species
+        self.prob_calculator_multispecies.compute_species_probs()
+
+        # Check there are sufficient particles
+        if self.prob_calculator_multispecies.no_species_possible == 0:
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("Fail: not enough particles within the cutoff radius to sample a pair.")
+            return False
+
+        return self.rejection_sample_first_particle_given_nonzero_probs(no_tries_max=no_tries_max)
+
+
+
+    def rejection_sample_first_particle_given_nonzero_probs(self, no_tries_max=100):
+        """Use rejection sampling to sample the first particle, given nonzero probs for the first particle and species
+
+        Args:
+        no_tries_max (int): max. no. of tries for rejection sampling
+
+        Returns:
+        bool: True for success, False for failure
+        """
+
+        # Reset current
+        self.idx_first_particle = None
 
         i_try = 0
         while i_try < no_tries_max:
             i_try += 1
 
-            success = self.rejection_sample_first_particle(no_tries_max=1,compute_probs_species=False,compute_probs=False)
+            # Random species
+            success = self.sample_species_given_nonzero_probs()
+            if not success:
+                return False # No species available
+
+            # Rejection sample
+            sampler = self.samplers[self.idx_species_particles]
+            success = sampler.rejection_sample_first_particle_given_nonzero_probs(no_tries_max=1)
+            if success:
+                self.idx_first_particle = sampler.idx_first_particle
+
+                self._logger.info("> samplePairsGaussian <")
+                self._logger.info("Accepted first particle species: " + str(self.species_particles) + " idx: " + str(self.idx_first_particle) + " after: " + str(i_try) + " tries")
+
+                return True
+
+        # Getting here means failure
+        self._logger.info("> samplePairsGaussian <")
+        self._logger.info("Fail: Could not sample the first particle after: " + str(i_try) + " tries.")
+        return False
+
+
+
+    def rejection_sample_second_particle(self, no_tries_max=100):
+        """Use rejection sampling to sample the second particle
+
+        Args:
+        no_tries_max (int): max. no. of tries for rejection sampling
+
+        Returns:
+        bool: True for success, False for failure
+        """
+
+        # Reset current
+        self.idx_second_particle = None
+
+        sampler = self.samplers[self.idx_species_particles]
+        success = sampler.rejection_sample_second_particle(no_tries_max=no_tries_max)
+        if success:
+            self.idx_second_particle = sampler.idx_second_particle
+
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("Accepted second particle species: " + str(self.species_particles) + " idx: " + str(self.idx_second_particle))
+
+            return True
+
+        else:
+
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("Fail: Could not sample the second particle.")
+
+            return False
+
+
+
+    def rejection_sample_pair(self, std_dev, std_dev_clip_mult, no_tries_max=100):
+        """Use rejection sampling to sample a pair of particles
+
+        Args:
+        std_dev (float): standard deviation
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
+        no_tries_max (int): max. no. of tries for rejection sampling
+
+        Returns:
+        bool: True for success, False for failure
+        """
+
+        # Form probabilities
+        self.prob_calculator_multispecies.compute_un_probs_first_particle_for_all_species(std_dev, std_dev_clip_mult)
+
+        # Form probabilities for species
+        self.prob_calculator_multispecies.compute_species_probs()
+
+        # Check there are sufficient particles
+        if self.prob_calculator_multispecies.no_species_possible == 0:
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("Fail: not enough particles within the cutoff radius to sample a pair.")
+            return False
+
+        return self.rejection_sample_pair_given_nonzero_probs_for_first_particle(no_tries_max=no_tries_max)
+
+
+
+    def rejection_sample_pair_given_nonzero_probs_for_first_particle(self, no_tries_max=100):
+        """Use rejection sampling to sample a pair of particles
+
+        Args:
+        no_tries_max (int): max. no. of tries for rejection sampling
+
+        Returns:
+        bool: True for success, False for failure
+        """
+
+        i_try = 0
+        while i_try < no_tries_max:
+            i_try += 1
+
+            success = self.rejection_sample_first_particle_given_nonzero_probs(no_tries_max=1)
             if not success:
                 continue # try again
 
-            success = self.rejection_sample_second_particle(no_tries_max=1,compute_probs=True)
+            success = self.rejection_sample_second_particle(no_tries_max=1)
             if not success:
                 continue # try again
-
-            # Set logging back
-            self._logger.setLevel(level)
 
             self._logger.info("> samplePairsGaussian <")
             self._logger.info("Accepted pair particles species: " + str(self.species_particles) + " idxs: " + str(self.idx_first_particle) + " " + str(self.idx_second_particle) + " after: " + str(i_try) + " tries")
@@ -211,18 +267,16 @@ class SamplerMultiSpecies:
 
         # Getting here means failure
         self._logger.info("> samplePairsGaussian <")
-        self._logger.error("Error! Could not sample the two particles after: " + str(no_tries_max) + " tries.")
+        self._logger.info("Fail: Could not sample the two particles after: " + str(no_tries_max) + " tries.")
         return False
 
 
 
-    def cdf_sample_first_particle(self, compute_probs_species=True, compute_probs=True, std_dev=None, std_dev_clip_mult=None):
+    def cdf_sample_first_particle(self, std_dev, std_dev_clip_mult):
         """Sample the first particle by directly calculating the CDF via np.random.choice
         Ensures that the probabilities in the ProbCalculator are normalized before proceeding
 
         Args:
-        compute_probs_species (bool): whether to first call compute_probs_species for the ProbCalculatorMultiSpecies
-        compute_probs (bool): whether to first call compute_probs_first_particle for the ProbCalculator
         std_dev (float): standard deviation
         std_dev_clip_mult (float): multiplier for the standard deviation cutoff
 
@@ -230,73 +284,77 @@ class SamplerMultiSpecies:
         bool: True for success, False for failure
         """
 
-        # Form probabilities for species
-        if compute_probs_species:
-            self.prob_calculator_multispecies.compute_species_probs()
-
         # Form probabilities
-        if compute_probs:
-            if std_dev == None or std_dev_clip_mult == None:
-                self._logger.info("> samplePairsGaussian <")
-                self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(1)
-            for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
-                prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
+        self.prob_calculator_multispecies.compute_un_probs_first_particle_for_all_species(std_dev, std_dev_clip_mult)
+
+        # Form probabilities for species
+        self.prob_calculator_multispecies.compute_species_probs()
+
+        # Check there are sufficient particles
+        if self.prob_calculator_multispecies.no_species_possible == 0:
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("Fail: not enough particles within the cutoff radius to sample a pair.")
+            return False
 
         # Ensure normalized
-        for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
-            if prob_calculator.are_probs_first_particle_normalized == False:
-                prob_calculator.normalize_probs_first_particle()
+        self.prob_calculator_multispecies.ensure_probs_first_particle_are_normalized_for_all_species()
+
+        return self.cdf_sample_first_particle_given_nonzero_probs()
+
+
+
+    def cdf_sample_first_particle_given_nonzero_probs(self):
+        """Sample the first particle by directly calculating the CDF via np.random.choice
+        Ensures that the probabilities in the ProbCalculator are normalized before proceeding
+
+        Returns:
+        bool: True for success, False for failure
+        """
 
         # Choose species
-        self.idx_species_particles = np.random.choice(range(0,self.prob_calculator_multispecies.no_species), 1, p=self.prob_calculator_multispecies.probs_species)[0]
-        self.species_particles = self.prob_calculator_multispecies.species_arr[self.idx_species_particles]
+        self.sample_species_given_nonzero_probs()
 
         # Choose particle
-        self.idx_first_particle = np.random.choice(range(0,self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].n), 1, p=self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].probs_first_particle)[0]
+        sampler = self.samplers[self.idx_species_particles]
+        success = sampler.cdf_sample_first_particle_given_nonzero_probs()
+        if success:
+            self.idx_first_particle = sampler.idx_first_particle
 
-        self._logger.info("> samplePairsGaussian <")
-        self._logger.info("CDF sampled first particle species: " + str(self.species_particles) + " idx: " + str(self.idx_first_particle))
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("CDF sampled first particle species: " + str(self.species_particles) + " idx: " + str(self.idx_first_particle))
 
-        return True
+            return True
+        else:
+            return False
 
 
 
-    def cdf_sample_second_particle(self,compute_probs=True):
+    def cdf_sample_second_particle(self):
         """Sample the second particle by directly calculating the CDF via np.random.choice
         Ensures that the probabilities in the ProbCalculator are normalized before proceeding
 
-        Args:
-        compute_probs (bool): whether to first call compute_probs_second_particle for the ProbCalculator
-
         Returns:
         bool: True for success, False for failure
         """
 
-        # Form probabilities
-        if compute_probs:
-            self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].compute_un_probs_second_particle(self.idx_first_particle)
+        sampler = self.samplers[self.idx_species_particles]
+        success = sampler.cdf_sample_second_particle()
+        if success:
+            self.idx_second_particle = sampler.idx_second_particle
 
-        # Ensure normalized
-        if self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].are_probs_second_particle_normalized == False:
-            self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].normalize_probs_second_particle()
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("CDF sampled second particle species: " + str(self.species_particles) + " idx: " + str(self.idx_second_particle))
 
-        # Choose
-        self.idx_second_particle = np.random.choice(self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].idxs_possible_second_particle, 1, p=self.prob_calculator_multispecies.prob_calculator_arr[self.idx_species_particles].probs_second_particle)[0]
-
-        self._logger.info("> samplePairsGaussian <")
-        self._logger.info("CDF sampled second particle species: " + str(self.species_particles) + " idx: " + str(self.idx_second_particle))
-
-        return True
+            return True
+        else:
+            return False
 
 
 
-    def cdf_sample_pair(self, compute_probs_species=True, compute_probs_first_particle=True, std_dev=None, std_dev_clip_mult=None):
+    def cdf_sample_pair(self, std_dev, std_dev_clip_mult):
         """Sample both particles directly using numpy.random.choice
 
         Args:
-        compute_probs_species (bool): whether to first call compute_probs_species for the ProbCalculatorMultiSpecies
-        compute_probs_first_particle (bool): whether to first call compute_probs_first_particle for the ProbCalculator
         std_dev (float): standard deviation
         std_dev_clip_mult (float): multiplier for the standard deviation cutoff
 
@@ -304,44 +362,45 @@ class SamplerMultiSpecies:
         bool: True for success, False for failure
         """
 
-        # Form probabilities for species
-        if compute_probs_species:
-            self.prob_calculator_multispecies.compute_species_probs()
-
         # Form probabilities
-        if compute_probs_first_particle:
-            if std_dev == None or std_dev_clip_mult == None:
-                self._logger.info("> samplePairsGaussian <")
-                self._logger.error("Error: must specify std_dev and std_dev_clip_mult for computing probabilities; Quitting.")
-                sys.exit(1)
-            for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
-                prob_calculator.compute_un_probs_first_particle(std_dev, std_dev_clip_mult)
+        self.prob_calculator_multispecies.compute_un_probs_first_particle_for_all_species(std_dev, std_dev_clip_mult)
 
-        # Ensure normalized
-        for prob_calculator in self.prob_calculator_multispecies.prob_calculator_arr:
-            if prob_calculator.are_probs_first_particle_normalized == False:
-                prob_calculator.normalize_probs_first_particle()
+        # Form probabilities for species
+        self.prob_calculator_multispecies.compute_species_probs()
 
-        # Turn off logging temp
-        level = self._logger.level
-        self._logger.setLevel(logging.CRITICAL)
-
-        success = self.cdf_sample_first_particle(compute_probs_species=False, compute_probs=False)
-        if not success:
-            self._logger.setLevel(level)
+        # Check there are sufficient particles
+        if self.prob_calculator_multispecies.no_species_possible == 0:
             self._logger.info("> samplePairsGaussian <")
-            self._logger.error("Error! Could not sample the two particles using cdf_sample_pair.")
+            self._logger.info("Fail: not enough particles within the cutoff radius to sample a pair.")
             return False
 
-        success = self.cdf_sample_second_particle(compute_probs=True)
+        # Ensure normalized
+        self.prob_calculator_multispecies.ensure_probs_first_particle_are_normalized_for_all_species()
+
+        return self.cdf_sampler_pair_given_nonzero_probs_for_first_particle()
+
+
+
+    def cdf_sampler_pair_given_nonzero_probs_for_first_particle(self):
+        """Sample both particles directly using numpy.random.choice
+
+        Returns:
+        bool: True for success, False for failure
+        """
+
+        success = self.cdf_sample_first_particle_given_nonzero_probs()
         if not success:
-            self._logger.setLevel(level)
             self._logger.info("> samplePairsGaussian <")
-            self._logger.error("Error! Could not sample the two particles using cdf_sample_pair.")
+            self._logger.info("Fail: Could not sample the two particles using cdf_sample_pair.")
+            return False
+
+        success = self.cdf_sample_second_particle()
+        if not success:
+            self._logger.info("> samplePairsGaussian <")
+            self._logger.info("Fail: Could not sample the two particles using cdf_sample_pair.")
             return False
 
         # Set logging back
-        self._logger.setLevel(level)
         self._logger.info("> samplePairsGaussian <")
         self._logger.info("CDF sampled pair particle species: " + str(self.species_particles) + " idxs: " + str(self.idx_first_particle) + " " + str(self.idx_second_particle))
 

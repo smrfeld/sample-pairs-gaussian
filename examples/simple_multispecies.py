@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     # Sample pair using rejection sampling
     no_tries_max = 100
-    success = sampler.rejection_sample_pair(no_tries_max=no_tries_max,std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
+    success = sampler.rejection_sample_pair(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult,no_tries_max=no_tries_max)
     if not success:
         handle_fail()
 
