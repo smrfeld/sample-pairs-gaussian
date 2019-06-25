@@ -74,6 +74,20 @@ class ProbCalculatorMultiSpecies:
 
 
 
+    def get_normalization_pairs(self):
+        """Get normalization for the pairs
+        i.e. sum_species sum_ij exp[-(xi-xj)^2 / 2s^2]
+
+        Returns:
+        float: normalization
+        """
+        val = 0.0
+        for prob_calculator in self.prob_calculator_arr:
+            val += prob_calculator.get_normalization_pairs()
+        return val
+
+
+
     def get_prob_calculator_for_species(self, species):
         """Get prob calculator for a species
 

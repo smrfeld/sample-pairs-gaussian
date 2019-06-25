@@ -177,6 +177,17 @@ class ProbCalculator:
 
 
 
+    def get_normalization_pairs(self):
+        """Get normalization for the pairs
+        i.e. sum_ij exp[-(xi-xj)^2 / 2s^2]
+
+        Returns:
+        float: normalization
+        """
+        return np.sum(self._gauss)
+
+
+
     def normalize_probs_first_particle(self):
         """Normalize the probs for the first particle
         """
