@@ -183,6 +183,40 @@ class ProbCalculator:
 
 
 
+    def compute_gaussian_sum_between_particle_and_existing(self, posn, std_dev, std_dev_clip_mult=3.0, excluding_idxs=[]):
+        if self.n == 0:
+            return None
+
+        # Exclude idxs
+        idxs = np.array(range(0,self.n))
+        if excluding_idxs != []:
+            idxs = np.delete(idxs,excluding_idxs)
+        posns = self.posns[idxs]
+
+        if len(posns) == 0:
+            return None
+
+        # Distances squared
+        dr = posns - posn
+        dists_squared = np.sum(dr*dr, axis=1)
+
+        # Max dist
+        max_dist_squared = pow(std_dev_clip_mult*std_dev,2)
+        two_var = 2.0 * pow(std_dev,2)
+
+        # Filter by max dist
+        stacked = np.array([idxs,dists_squared]).T
+        idxs_filter, dists_squared_filter = stacked[stacked[:,1] < max_dist_squared].T
+
+        # Compute gaussians
+        dim = len(self.posns[0])
+        gauss = np.exp(- dists_squared_filter / two_var) / pow(np.sqrt(np.pi * two_var),dim)
+
+        # Normalization
+        return np.sum(gauss)
+
+
+
     def normalize_probs_first_particle(self):
         """Normalize the probs for the first particle
         """
@@ -191,7 +225,7 @@ class ProbCalculator:
             self.are_probs_first_particle_normalized = True
             norm = np.sum(self.probs_first_particle)
             self.probs_first_particle /= norm
-            self.max_prob_first_particle = 1.0
+            self.max_prob_first_particle = max(self.probs_first_particle)
 
 
 
@@ -234,4 +268,4 @@ class ProbCalculator:
             self.are_probs_second_particle_normalized = True
             norm = np.sum(self.probs_second_particle)
             self.probs_second_particle /= norm
-            self.max_prob_second_particle = 1.0
+            self.max_prob_second_particle = max(self.probs_second_particle)
