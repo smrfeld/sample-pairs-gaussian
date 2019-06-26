@@ -165,7 +165,8 @@ class ProbCalculator:
         self._uti1filter = self._uti1filter.astype(int)
 
         # Compute gaussians
-        self._gauss = np.exp(-self._dists_squared_filter/two_var)
+        dim = len(self.posns[0])
+        self._gauss = np.exp(- self._dists_squared_filter / two_var) / pow(np.sqrt(np.pi * two_var),dim)
         self.norm_gauss = np.sum(self._gauss)
 
         # Not normalized probs for first particle
