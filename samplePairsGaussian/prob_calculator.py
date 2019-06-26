@@ -12,6 +12,7 @@ class ProbCalculator:
     probs_first_particle (np.array([float])): probabilities for the first particle of length n
     are_probs_first_particle_normalized (bool): bool whether the probabilities are normalized
     max_prob_first_particle (float): the maximum probability value, useful for rejection sampling
+    norm_gauss (float): normalization for the gaussian terms
 
     idxs_possible_second_particle (np.array([int])): indexes possible for the second particle
     no_idxs_possible_second_particle (int): number of indexes possible i.e. len(idxs_possible_second_particle)
@@ -165,6 +166,7 @@ class ProbCalculator:
 
         # Compute gaussians
         self._gauss = np.exp(-self._dists_squared_filter/two_var)
+        self.norm_gauss = np.sum(self._gauss)
 
         # Not normalized probs for first particle
         probs_all = np.bincount(self._uti0filter,self._gauss,minlength=self.n) + np.bincount(self._uti1filter,self._gauss,minlength=self.n)
@@ -177,17 +179,6 @@ class ProbCalculator:
             self.max_prob_first_particle = max(self.probs_first_particle)
         else:
             self.max_prob_first_particle = None
-
-
-
-    def get_normalization_pairs(self):
-        """Get normalization for the pairs
-        i.e. sum_ij exp[-(xi-xj)^2 / 2s^2]
-
-        Returns:
-        float: normalization
-        """
-        return np.sum(self._gauss)
 
 
 

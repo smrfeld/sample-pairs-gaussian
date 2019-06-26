@@ -83,7 +83,7 @@ class ProbCalculatorMultiSpecies:
         """
         val = 0.0
         for prob_calculator in self.prob_calculator_arr:
-            val += prob_calculator.get_normalization_pairs()
+            val += prob_calculator.norm_gauss
         return val
 
 
