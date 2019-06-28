@@ -15,18 +15,19 @@ The main steps are:
 4. Sample using:
   * Rejection sampling as follows:
   ```
-  success = sampler.rejection_sample_pair_particles(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult,no_tries_max=no_tries_max)
+  success = sampler.rejection_sample(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult,no_tries_max=no_tries_max)
   ```
   where `success` will be a Boolean, and `no_tries_max` is the number of tries before quitting, and:
   * `std_dev` - the standard deviation of the Gaussian.
   * `std_dev_clip_mult` - a multiplier for cutting off the probabilities. For a given particle, particles that are further than `std_dev_clip_mult * std_dev` away are not considered for draws.
   If this value is too low, only particles very close to each-other are considered for pairs, and the method is inaccurate (or fails). If this value is too high, the sampling is very inefficient, especially using rejection sampling since many particles far away from one another are considered as candidates.
+  This value can also be excluded by specifying `std_dev_clip_mult=None`.
 
   A good value here is e.g. `std_dev_clip_mult = 3`, such that `99.73%` of the full distribution is used.
 
   * Computing the CDF (i.e. through `numpy.random.choice` with weighted probabilities) as follows:
   ```
-  success = sampler.cdf_sample_pair_particles(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
+  success = sampler.cdf_sample(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
   ```
 
 ## Drawing multiple pairs of particles in 1D

@@ -51,11 +51,7 @@ if __name__ == "__main__":
     std_dev_clip_mult = 3.0
 
     # For efficiency, just compute the first particle probability now
-    prob_calculator_A.compute_un_probs_first_particle(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
-    prob_calculator_B.compute_un_probs_first_particle(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
-
-    # Also compute the species probs
-    prob_calculator.compute_species_probs()
+    prob_calculator.compute_un_probs_for_all_species(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
 
     no_samples = 1000
     no_tries_max = 100
@@ -64,7 +60,7 @@ if __name__ == "__main__":
     for i in range(0,no_samples):
 
         # Sample using rejection sampling
-        success = sampler.rejection_sample_pair_given_nonzero_probs_for_first_particle(no_tries_max=no_tries_max)
+        success = sampler.rejection_sample_given_nonzero_probs(no_tries_max=no_tries_max)
         if not success:
             handle_fail()
 

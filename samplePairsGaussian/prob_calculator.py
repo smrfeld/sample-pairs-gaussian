@@ -9,17 +9,12 @@ class ProbCalculator:
     posns (np.array([[float]])): particle positions. First axis are particles, seconds are coordinates in n-dimensional space
     n (int): number of particles
 
-    probs_first_particle (np.array([float])): probabilities for the first particle of length n
-    are_probs_first_particle_normalized (bool): bool whether the probabilities are normalized
-    max_prob_first_particle (float): the maximum probability value, useful for rejection sampling
-    norm_gauss (float): normalization for the gaussian terms
-
-    idxs_possible_second_particle (np.array([int])): indexes possible for the second particle
-    no_idxs_possible_second_particle (int): number of indexes possible i.e. len(idxs_possible_second_particle)
-    probs_second_particle (np.array([float])): probabilities for the first particle of length idxs_possible_second_particle
-    are_probs_second_particle_normalized (bool): bool whether the probabilities are normalized
-    max_prob_second_particle (float): the maximum probability value, useful for rejection sampling
-
+    idxs_possible_first_particle (np.array([int])): idx of the first particle. Only unique combinations together with idxs_2.
+    idxs_possible_second_particle (np.array([int])): idx of the second particle. Only unique combinations together with idxs_1.
+    probs (np.array([float])): probs of each pair of particles.
+    no_idx_pairs_possible (int): # idx pairs possible
+    are_probs_normalized (bool): whether the probabilities are normalized.
+    max_prob (float): the maximum probability value, useful for rejection sampling
 
     Private attributes:
     _logger (logger): logging
@@ -65,16 +60,10 @@ class ProbCalculator:
         self._gauss = np.array([])
 
         self.idxs_possible_first_particle = np.array([]).astype(int)
-        self.no_idxs_possible_first_particle = 0
-        self.probs_first_particle = np.array([]).astype(float)
-        self.are_probs_first_particle_normalized = False
-        self.max_prob_first_particle = 0.0
-
         self.idxs_possible_second_particle = np.array([]).astype(int)
-        self.no_idxs_possible_second_particle = 0
-        self.probs_second_particle = np.array([]).astype(float)
-        self.are_probs_second_particle_normalized = False
-        self.max_prob_second_particle = 0.0
+        self.probs = np.array([]).astype(float)
+        self.are_probs_normalized = False
+        self.max_prob = None
 
 
 
@@ -121,69 +110,75 @@ class ProbCalculator:
         new_posn (np.array([float])): new position in d dimensions
         """
 
-        self.posns[idx] = new_posn
+        # Remove and reinsert
+        self.remove_particle(idx)
+        self.add_particle(idx, new_posn)
 
 
 
-    def compute_un_probs_first_particle(self, std_dev, std_dev_clip_mult):
-        """Compute un-normalized probabilities for drawing the first particle out of n possible particles.
-        After running this, the following arguments will be set:
-            probs_first_particle
-            are_probs_first_particle_normalized
-            max_prob_first_particle
+    def compute_un_probs(self, std_dev, std_dev_clip_mult):
+        """Compute un-normalized probabilities.
 
         Args:
         std_dev (float): standard deviation
-        std_dev_clip_mult (float): multiplier for the standard deviation cutoff
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff, else None
         """
 
         # Check there are sufficient particles
         if self.n < 2:
             self.idxs_possible_first_particle = np.array([]).astype(int)
-            self.probs_first_particle = np.array([]).astype(float)
-            self.no_idxs_possible_first_particle = 0
-            self.are_probs_first_particle_normalized = False
-            self.max_prob_first_particle = 0.0
+            self.idxs_possible_second_particle = np.array([]).astype(int)
+            self.probs = np.array([]).astype(float)
+            self.are_probs_normalized = False
+            self.max_prob = None
             return
 
         # uti is a list of two (1-D) numpy arrays
         # containing the indices of the upper triangular matrix
-        self._uti = np.triu_indices(self.n,k=1)        # k=1 eliminates diagonal indices
+        self.idxs_possible_first_particle, self.idxs_possible_second_particle = np.triu_indices(self.n,k=1)        # k=1 eliminates diagonal indices
+        self.no_idx_pairs_possible = len(self.idxs_possible_first_particle)
 
         # uti[0] is i, and uti[1] is j from the previous example
-        dr = self.posns[self._uti[0]] - self.posns[self._uti[1]]            # computes differences between particle positions
+        dr = self.posns[self.idxs_possible_first_particle] - self.posns[self.idxs_possible_second_particle]            # computes differences between particle positions
         self._dists_squared = np.sum(dr*dr, axis=1)    # computes distances squared; D is a 4950 x 1 np array
 
         # Clip distances at std_dev_clip_mult * sigma
-        max_dist_squared = pow(std_dev_clip_mult*std_dev,2)
-        two_var = 2.0 * pow(std_dev,2)
+        if std_dev_clip_mult != None:
+            max_dist_squared = pow(std_dev_clip_mult*std_dev,2)
 
-        # Eliminate beyond max dist
-        stacked = np.array([self._uti[0],self._uti[1],self._dists_squared]).T
-        self._uti0filter, self._uti1filter, self._dists_squared_filter = stacked[stacked[:,2] < max_dist_squared].T
-        self._uti0filter = self._uti0filter.astype(int)
-        self._uti1filter = self._uti1filter.astype(int)
+            # Eliminate beyond max dist
+            stacked = np.array([self.idxs_possible_first_particle,self.idxs_possible_second_particle,self._dists_squared]).T
+            self.idxs_possible_first_particle, self.idxs_possible_second_particle, self._dists_squared = stacked[stacked[:,2] < max_dist_squared].T
+            self.idxs_possible_first_particle = self.idxs_possible_first_particle.astype(int)
+            self.idxs_possible_second_particle = self.idxs_possible_second_particle.astype(int)
+            self.no_idx_pairs_possible = len(self.idxs_possible_first_particle)
 
         # Compute gaussians
+        two_var = 2.0 * pow(std_dev,2)
         dim = len(self.posns[0])
-        self._gauss = np.exp(- self._dists_squared_filter / two_var) / pow(np.sqrt(np.pi * two_var),dim)
-        self.norm_gauss = np.sum(self._gauss)
+        self.probs = np.exp(- self._dists_squared / two_var) / pow(np.sqrt(np.pi * two_var),dim)
 
-        # Not normalized probs for first particle
-        probs_all = np.bincount(self._uti0filter,self._gauss,minlength=self.n) + np.bincount(self._uti1filter,self._gauss,minlength=self.n)
-        non_zero_entries = probs_all > 0.
-        self.idxs_possible_first_particle = np.array(range(0,self.n))[non_zero_entries]
-        self.probs_first_particle = probs_all[non_zero_entries]
-        self.no_idxs_possible_first_particle = len(self.idxs_possible_first_particle)
-        self.are_probs_first_particle_normalized = False
-        if self.no_idxs_possible_first_particle > 0:
-            self.max_prob_first_particle = max(self.probs_first_particle)
+        # Normalized
+        self.are_probs_normalized = False
+
+        # Max
+        if self.no_idx_pairs_possible > 0:
+            self.max_prob = max(self.probs)
         else:
-            self.max_prob_first_particle = None
+            self.max_prob = None
 
 
 
     def compute_gaussian_sum_between_particle_and_existing(self, posn, std_dev, std_dev_clip_mult=3.0, excluding_idxs=[]):
+        """Compute normalization = sum_{j} exp( -(xi-xj)^2 / 2*sigma^2 ) for a given particle xi and all other existing particles, possibly excluding some idxs
+
+        Args:
+        posn (np.array([float])): position of the particle
+        std_dev (float): standard deviation
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff, else None
+        excluding_idxs ([int]): list of particle idxs in [0,n) to exclude
+        """
+
         if self.n == 0:
             return None
 
@@ -201,71 +196,29 @@ class ProbCalculator:
         dists_squared = np.sum(dr*dr, axis=1)
 
         # Max dist
-        max_dist_squared = pow(std_dev_clip_mult*std_dev,2)
-        two_var = 2.0 * pow(std_dev,2)
+        if std_dev_clip_mult != None:
+            max_dist_squared = pow(std_dev_clip_mult*std_dev,2)
 
-        # Filter by max dist
-        stacked = np.array([idxs,dists_squared]).T
-        idxs_filter, dists_squared_filter = stacked[stacked[:,1] < max_dist_squared].T
+            # Filter by max dist
+            stacked = np.array([idxs,dists_squared]).T
+            idxs, dists_squared = stacked[stacked[:,1] < max_dist_squared].T
 
         # Compute gaussians
+        two_var = 2.0 * pow(std_dev,2)
         dim = len(self.posns[0])
-        gauss = np.exp(- dists_squared_filter / two_var) / pow(np.sqrt(np.pi * two_var),dim)
+        gauss = np.exp(- dists_squared / two_var) / pow(np.sqrt(np.pi * two_var),dim)
 
         # Normalization
         return np.sum(gauss)
 
 
 
-    def normalize_probs_first_particle(self):
-        """Normalize the probs for the first particle
+    def ensure_probs_are_normalized(self):
+        """Normalize the probs
         """
 
-        if self.no_idxs_possible_first_particle > 0:
-            self.are_probs_first_particle_normalized = True
-            norm = np.sum(self.probs_first_particle)
-            self.probs_first_particle /= norm
-            self.max_prob_first_particle = max(self.probs_first_particle)
-
-
-
-    def compute_un_probs_second_particle(self, idx_first_particle):
-        """Compute un-normalized probabilities for drawing the second particle for a given first particle.
-        After running this, the following arguments will be set:
-            idxs_possible_second_particle
-            no_idxs_possible_second_particle
-            probs_second_particle
-            are_probs_second_particle_normalized
-            max_prob_second_particle
-
-        Args:
-        idx_first_particle (int): the index of the first particle in 0,1,...,n-1
-        """
-
-        # Not normalized probs for second particle probs
-        true_false_0 = self._uti0filter == idx_first_particle
-        true_false_1 = self._uti1filter == idx_first_particle
-
-        # Idxs
-        self.idxs_possible_second_particle = np.concatenate((self._uti1filter[true_false_0], self._uti0filter[true_false_1]))
-        self.no_idxs_possible_second_particle = len(self.idxs_possible_second_particle)
-
-        # Probs
-        self.probs_second_particle = np.concatenate((self._gauss[true_false_0],self._gauss[true_false_1]))
-
-        self.are_probs_second_particle_normalized = False
-        if self.no_idxs_possible_second_particle > 0:
-            self.max_prob_second_particle = max(self.probs_second_particle)
-        else:
-            self.max_prob_second_particle = None
-
-
-    def normalize_probs_second_particle(self):
-        """Normalize the probs for the second particle
-        """
-
-        if self.no_idxs_possible_second_particle > 0:
-            self.are_probs_second_particle_normalized = True
-            norm = np.sum(self.probs_second_particle)
-            self.probs_second_particle /= norm
-            self.max_prob_second_particle = max(self.probs_second_particle)
+        if not self.are_probs_normalized and self.no_idx_pairs_possible > 0:
+            self.are_probs_normalized = True
+            norm = np.sum(self.probs)
+            self.probs /= norm
+            self.max_prob = max(self.probs)
