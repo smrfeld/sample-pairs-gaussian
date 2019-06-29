@@ -18,12 +18,6 @@ class ProbCalculator:
 
     Private attributes:
     _logger (logger): logging
-    _dists_squared (np.array([float])): square displacements of particles from eachother
-    _uti ([np.array([int]),np.array([int])]): indexes for displacements forming an upper triangular matrix, from np.triu_indices
-    _dists_squared_filter (np.array([float])): as _dists_squared, after cutoff is applied
-    _uti0filter (np.array([int])): as _uti[0], after the cutoff is applied
-    _uti1filter (np.array([int])): as _uti[1], after the cutoff is applied
-    _gauss (np.array([float])) _dists_squared_filter converted to Gaussians
     """
 
 
@@ -51,20 +45,12 @@ class ProbCalculator:
         self.n = len(self.posns)
 
         # Initialize all manner of other properties for possible later use
-        self._uti = np.array([]).astype(int)
-        self._dists_squared = np.array([])
-
-        self._dists_squared_filter = np.array([])
-        self._uti0filter = np.array([]).astype(int)
-        self._uti1filter = np.array([]).astype(int)
-        self._gauss = np.array([])
-
         self.idxs_possible_first_particle = np.array([]).astype(int)
         self.idxs_possible_second_particle = np.array([]).astype(int)
         self.probs = np.array([]).astype(float)
         self.are_probs_normalized = False
         self.max_prob = None
-
+        self.norm = None
 
 
     def set_logging_level(self, level):
@@ -77,16 +63,66 @@ class ProbCalculator:
 
 
 
-    def add_particle(self, idx, posn):
+    def add_particle(self, idx, posn, std_dev, std_dev_clip_mult):
         """Add a particle
 
         Args:
         idx (int): position at which to insert the particle
         posn (np.array([float])): position in d dimensions
+        std_dev (float): standard deviation for re-computing the distances
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff, else None
         """
 
         self.posns = np.insert(self.posns,idx,posn,axis=0)
         self.n += 1
+
+        # Shift idxs such that they do not refer to idx
+        idxs_all = np.arange(self.no_idx_pairs_possible)
+        shift_1 = idxs_all[self.idxs_possible_first_particle >= idx]
+        self.idxs_possible_first_particle[shift_1] += 1
+        shift_2 = idxs_all[self.idxs_possible_second_particle >= idx]
+        self.idxs_possible_second_particle[shift_2] += 1
+
+        # Idxs of particle pairs to add
+        idxs_add_1 = np.full(self.n-1,idx)
+        idxs_add_2 = np.delete(np.arange(self.n),idx)
+
+        # Distances squared
+        dr = self.posns[idxs_add_1] - self.posns[idxs_add_2]
+        dists_squared = np.sum(dr*dr, axis=1)
+
+        # Max dist
+        if std_dev_clip_mult != None:
+            max_dist_squared = pow(std_dev_clip_mult*std_dev,2)
+
+            # Filter by max dist
+            stacked = np.array([idxs_add_1,idxs_add_2,dists_squared]).T
+            idxs_add_1,idxs_add_2, dists_squared = stacked[stacked[:,2] < max_dist_squared].T
+
+        # Compute gaussians
+        two_var = 2.0 * pow(std_dev,2)
+        dim = len(posn)
+        probs_add = np.exp(- dists_squared / two_var) / pow(np.sqrt(np.pi * two_var),dim)
+
+        # Append
+        self.idxs_possible_first_particle = np.append(self.idxs_possible_first_particle,idxs_add_1)
+        self.idxs_possible_second_particle = np.append(self.idxs_possible_second_particle,idxs_add_2)
+        self.probs = np.append(self.probs,probs_add)
+
+        # Number of pairs now
+        self.no_idx_pairs_possible = len(self.idxs_possible_first_particle)
+
+        # If normalized, keep normalized!
+        if self.are_probs_normalized:
+            self.probs *= self.norm # scale back
+            self.norm = np.sum(self.probs) # new norm
+            self.probs /= self.norm # normalize
+
+        # Max prob
+        if self.no_idx_pairs_possible > 0:
+            self.max_prob = max(self.probs)
+        else:
+            self.max_prob = None
 
 
 
@@ -100,19 +136,52 @@ class ProbCalculator:
         self.posns = np.delete(self.posns,idx,axis=0)
         self.n -= 1
 
+        # Remove all probs associated with this
+        idxs_all = np.arange(self.no_idx_pairs_possible)
+        idxs_delete_1 = idxs_all[self.idxs_possible_first_particle == idx]
+        idxs_delete_2 = idxs_all[self.idxs_possible_second_particle == idx]
+        idxs_delete = np.concatenate((idxs_delete_1,idxs_delete_2))
+        self.probs = np.delete(self.probs,idxs_delete)
+        self.idxs_possible_first_particle = np.delete(self.idxs_possible_first_particle,idxs_delete)
+        self.idxs_possible_second_particle = np.delete(self.idxs_possible_second_particle,idxs_delete)
+
+        # Number of pairs now
+        self.no_idx_pairs_possible = len(self.idxs_possible_first_particle)
+
+        # If normalized, keep normalized!
+        if self.are_probs_normalized:
+            self.probs *= self.norm # scale back
+            self.norm = np.sum(self.probs) # new norm
+            self.probs /= self.norm # normalize
+
+        # Max prob
+        if self.no_idx_pairs_possible > 0:
+            self.max_prob = max(self.probs)
+        else:
+            self.max_prob = None
+
+        # Shift the idxs such that they again include idx
+        idxs_all = np.arange(self.no_idx_pairs_possible)
+        shift_1 = idxs_all[self.idxs_possible_first_particle > idx]
+        self.idxs_possible_first_particle[shift_1] -= 1
+        shift_2 = idxs_all[self.idxs_possible_second_particle > idx]
+        self.idxs_possible_second_particle[shift_2] -= 1
 
 
-    def move_particle(self, idx, new_posn):
+
+    def move_particle(self, idx, new_posn, std_dev, std_dev_clip_mult):
         """Move a particle
 
         Args:
         idx (int): idx of the particle to move
         new_posn (np.array([float])): new position in d dimensions
+        std_dev (float): standard deviation for re-computing the distances
+        std_dev_clip_mult (float): multiplier for the standard deviation cutoff, else None
         """
 
         # Remove and reinsert
         self.remove_particle(idx)
-        self.add_particle(idx, new_posn)
+        self.add_particle(idx, new_posn, std_dev, std_dev_clip_mult)
 
 
 
@@ -140,15 +209,15 @@ class ProbCalculator:
 
         # uti[0] is i, and uti[1] is j from the previous example
         dr = self.posns[self.idxs_possible_first_particle] - self.posns[self.idxs_possible_second_particle]            # computes differences between particle positions
-        self._dists_squared = np.sum(dr*dr, axis=1)    # computes distances squared; D is a 4950 x 1 np array
+        dists_squared = np.sum(dr*dr, axis=1)    # computes distances squared; D is a 4950 x 1 np array
 
         # Clip distances at std_dev_clip_mult * sigma
         if std_dev_clip_mult != None:
             max_dist_squared = pow(std_dev_clip_mult*std_dev,2)
 
             # Eliminate beyond max dist
-            stacked = np.array([self.idxs_possible_first_particle,self.idxs_possible_second_particle,self._dists_squared]).T
-            self.idxs_possible_first_particle, self.idxs_possible_second_particle, self._dists_squared = stacked[stacked[:,2] < max_dist_squared].T
+            stacked = np.array([self.idxs_possible_first_particle,self.idxs_possible_second_particle,dists_squared]).T
+            self.idxs_possible_first_particle, self.idxs_possible_second_particle, dists_squared = stacked[stacked[:,2] < max_dist_squared].T
             self.idxs_possible_first_particle = self.idxs_possible_first_particle.astype(int)
             self.idxs_possible_second_particle = self.idxs_possible_second_particle.astype(int)
             self.no_idx_pairs_possible = len(self.idxs_possible_first_particle)
@@ -156,9 +225,10 @@ class ProbCalculator:
         # Compute gaussians
         two_var = 2.0 * pow(std_dev,2)
         dim = len(self.posns[0])
-        self.probs = np.exp(- self._dists_squared / two_var) / pow(np.sqrt(np.pi * two_var),dim)
+        self.probs = np.exp(- dists_squared / two_var) / pow(np.sqrt(np.pi * two_var),dim)
 
         # Normalized
+        self.norm = None
         self.are_probs_normalized = False
 
         # Max
@@ -219,6 +289,6 @@ class ProbCalculator:
 
         if not self.are_probs_normalized and self.no_idx_pairs_possible > 0:
             self.are_probs_normalized = True
-            norm = np.sum(self.probs)
-            self.probs /= norm
+            self.norm = np.sum(self.probs)
+            self.probs /= self.norm
             self.max_prob = max(self.probs)
