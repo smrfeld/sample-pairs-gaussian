@@ -22,16 +22,16 @@ if __name__ == "__main__":
     N = 100
 
     # Positions of two species
-    posns_A = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
-    posns_B = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
+    posns = {}
+    posns["A"] = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
+    posns["B"] = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
 
     # Setup the sampler
 
     # Make the probability calculator
-    prob_calculator_A = ProbCalculator(posns_A)
-    prob_calculator_B = ProbCalculator(posns_B)
-    species_arr = ["A","B"]
-    prob_calculator = ProbCalculatorMultiSpecies([prob_calculator_A,prob_calculator_B],species_arr)
+    std_dev = 10.0
+    std_dev_clip_mult = 3.0
+    prob_calculator = ProbCalculatorMultiSpecies(posns,dim,std_dev,std_dev_clip_mult)
 
     # Make the sampler
     sampler = SamplerMultiSpecies(prob_calculator)
@@ -44,15 +44,6 @@ if __name__ == "__main__":
         print("Could not draw particle: try adjusting the std. dev. for the probability cutoff.")
         sys.exit(0)
 
-    # Cutoff counting probabilities for particles that are more than:
-    # std_dev_clip_mult * std_dev
-    # away from each-other
-    std_dev = 10.0
-    std_dev_clip_mult = 3.0
-
-    # For efficiency, just compute the first particle probability now
-    prob_calculator.compute_un_probs_for_all_species(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
-
     no_samples = 1000
     no_tries_max = 100
     idxs_1 = {"A": [], "B": []}
@@ -60,7 +51,7 @@ if __name__ == "__main__":
     for i in range(0,no_samples):
 
         # Sample using rejection sampling
-        success = sampler.rejection_sample_given_nonzero_probs(no_tries_max=no_tries_max)
+        success = sampler.rejection_sample(no_tries_max=no_tries_max)
         if not success:
             handle_fail()
 
@@ -81,12 +72,12 @@ if __name__ == "__main__":
     # Plot
 
     plt.figure()
-    plt.hist(posns_A)
+    plt.hist(posns["A"])
     plt.xlabel("particle position")
     plt.title("Distribution of " + str(N) + " particle positions of species A")
 
     plt.figure()
-    plt.hist(posns_B)
+    plt.hist(posns["B"])
     plt.xlabel("particle position")
     plt.title("Distribution of " + str(N) + " particle positions of species B")
 
@@ -94,10 +85,10 @@ if __name__ == "__main__":
     # Make symmetric
     idxs_1_symmetric = np.concatenate((idxs_1["A"],idxs_2["A"]))
     idxs_2_symmetric = np.concatenate((idxs_2["A"],idxs_1["A"]))
-    plt.plot(posns_A[idxs_1_symmetric][:,0],posns_A[idxs_2_symmetric][:,0],'ro')
+    plt.plot(posns["A"][idxs_1_symmetric][:,0],posns["A"][idxs_2_symmetric][:,0],'ro')
     idxs_1_symmetric = np.concatenate((idxs_1["B"],idxs_2["B"]))
     idxs_2_symmetric = np.concatenate((idxs_2["B"],idxs_1["B"]))
-    plt.plot(posns_B[idxs_1_symmetric][:,0],posns_B[idxs_2_symmetric][:,0],'bo')
+    plt.plot(posns["B"][idxs_1_symmetric][:,0],posns["B"][idxs_2_symmetric][:,0],'bo')
     plt.xlabel("position of particle #1")
     plt.ylabel("position of particle #2")
     plt.title(str(no_samples)+ " sampled pairs of particles")

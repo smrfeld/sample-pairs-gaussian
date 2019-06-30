@@ -32,7 +32,8 @@ if __name__ == "__main__":
     # Setup the sampler
 
     # Make the probability calculator
-    prob_calculator = ProbCalculator(posns)
+    std_dev_tmp = 1.0
+    prob_calculator = ProbCalculator(posns,dim,std_dev_tmp)
     # Distances have already been computed for us between all particles
 
     # Make the sampler
@@ -41,8 +42,8 @@ if __name__ == "__main__":
     # Func to get the samples
     def get_samples(no_samples, std_dev, std_dev_clip_mult):
 
-        # For efficiency, just compute the first particle probability now
-        prob_calculator.compute_un_probs(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
+        # Set std dev
+        prob_calculator.set_std_dev(std_dev,std_dev_clip_mult)
 
         no_tries_max = 100
         idxs_1 = []
@@ -50,7 +51,7 @@ if __name__ == "__main__":
         for i in range(0,no_samples):
 
             # Sample using rejection sampling
-            success = sampler.rejection_sample_given_nonzero_probs(no_tries_max=no_tries_max)
+            success = sampler.rejection_sample(no_tries_max=no_tries_max)
             if not success:
                 handle_fail()
 

@@ -23,16 +23,18 @@ if __name__ == "__main__":
     N = 100
 
     # Positions for two species
-    posns_A = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
-    posns_B = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
+    posns = {}
+    posns["A"] = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
+    posns["B"] = (np.random.random(size=(N,dim))-0.5) * (2.0 * L)
+
+    # Cutoff counting probabilities for particles that are more than:
+    # std_dev_clip_mult * std_dev
+    # away from each-other
+    std_dev = 10.0
+    std_dev_clip_mult = 3.0
 
     # Setup the sampler
-
-    # Make the probability calculator
-    prob_calculator_A = ProbCalculator(posns_A)
-    prob_calculator_B = ProbCalculator(posns_B)
-    species_arr = ["A","B"]
-    prob_calculator = ProbCalculatorMultiSpecies([prob_calculator_A,prob_calculator_B],species_arr)
+    prob_calculator = ProbCalculatorMultiSpecies(posns_dict=posns, dim=dim, std_dev=std_dev, std_dev_clip_mult=std_dev_clip_mult)
 
     # Make the sampler
     sampler = SamplerMultiSpecies(prob_calculator)
@@ -43,19 +45,13 @@ if __name__ == "__main__":
         print("Could not draw particle: try adjusting the std. dev. for the probability cutoff.")
         sys.exit(0)
 
-    # Cutoff counting probabilities for particles that are more than:
-    # std_dev_clip_mult * std_dev
-    # away from each-other
-    std_dev = 10.0
-    std_dev_clip_mult = 3.0
-
     # Sample pair using rejection sampling
     no_tries_max = 100
-    success = sampler.rejection_sample(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult,no_tries_max=no_tries_max)
+    success = sampler.rejection_sample(no_tries_max=no_tries_max)
     if not success:
         handle_fail()
 
     # Sample pair using CDF
-    success = sampler.cdf_sample(std_dev=std_dev,std_dev_clip_mult=std_dev_clip_mult)
+    success = sampler.cdf_sample()
     if not success:
         handle_fail()
