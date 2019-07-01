@@ -415,3 +415,45 @@ class ProbCalculatorMultiSpecies:
         # Remove and reinsert
         self.remove_particle(species, idx)
         self.add_particle(species, idx, new_posn)
+
+
+
+    def compute_gaussian_sum_between_particle_and_existing(self, species, posn, excluding_idxs=[]):
+        """Compute normalization = sum_{j} exp( -(xi-xj)^2 / 2*sigma^2 ) for a given particle xi and all other existing particles, possibly excluding some idxs
+
+        Args:
+        species (str): the species
+        posn (np.array([float])): position of the particle
+        excluding_idxs ([int]): list of particle idxs in [0,n) to exclude
+        """
+
+        if self._n[species] == 0:
+            return None
+
+        # Exclude idxs
+        idxs = np.array(range(0,self._n[species]))
+        if excluding_idxs != []:
+            idxs = np.delete(idxs,excluding_idxs)
+        posns = self._posns[species][idxs]
+
+        if len(posns) == 0:
+            return None
+
+        # Distances squared
+        dr = posns - posn
+        dists_squared = np.sum(dr*dr, axis=1)
+
+        # Max dist
+        if self._std_dev_clip_mult != None:
+            max_dist_squared = pow(self._std_dev_clip_mult*self._std_dev,2)
+
+            # Filter by max dist
+            stacked = np.array([idxs,dists_squared]).T
+            idxs, dists_squared = stacked[stacked[:,1] < max_dist_squared].T
+
+        # Compute gaussians
+        two_var = 2.0 * pow(self._std_dev,2)
+        gauss = np.exp(- dists_squared / two_var) / pow(np.sqrt(np.pi * two_var),self._dim)
+
+        # Normalization
+        return np.sum(gauss)
