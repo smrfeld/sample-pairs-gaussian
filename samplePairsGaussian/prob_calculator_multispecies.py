@@ -191,7 +191,7 @@ class ProbCalculatorMultiSpecies:
         for species, posns in self._posns_dict.items():
 
             # Make a prob calculator
-            pc = ProbCalculator(posns,self._std_dev,self._std_dev_clip_mult)
+            pc = ProbCalculator(posns=posns,dim=self._dim,std_dev=self._std_dev,std_dev_clip_mult=self._std_dev_clip_mult)
 
             # This has distances; reap them
             self._dists_squared = np.append(self._dists_squared,pc.dists_squared)
@@ -260,7 +260,7 @@ class ProbCalculatorMultiSpecies:
         posn (np.array([float])): position in d dimensions
         """
 
-        self._posns[species] = np.insert(self._posns[species],idx,posn,axis=0)
+        self._posns_dict[species] = np.insert(self._posns_dict[species],idx,posn,axis=0)
         self._n[species] += 1
 
         # Shift idxs such that they do not refer to idx
@@ -281,10 +281,10 @@ class ProbCalculatorMultiSpecies:
         # Idxs of particle pairs to add
         idxs_add_1 = np.full(self._n[species]-1,idx)
         idxs_add_2 = np.delete(np.arange(self._n[species]),idx)
-        species_add = np.full(self._n[species-1],species)
+        species_add = np.full(self._n[species]-1,species)
 
         # Distances squared
-        dr = self._posns[species][idxs_add_1] - self._posns[species][idxs_add_2]
+        dr = self._posns_dict[species][idxs_add_1] - self._posns_dict[species][idxs_add_2]
         dists_squared_add = np.sum(dr*dr, axis=1)
 
         # Append to the dists
@@ -313,7 +313,7 @@ class ProbCalculatorMultiSpecies:
         self._probs *= self._norm
 
         # Append
-        self._species_possible = np.append(self._species_possible,species_add)
+        self._probs_species = np.append(self._probs_species,species_add)
         self._probs_idxs_first_particle = np.append(self._probs_idxs_first_particle,idxs_add_1)
         self._probs_idxs_second_particle = np.append(self._probs_idxs_second_particle,idxs_add_2)
         self._probs = np.append(self._probs,probs_add)
@@ -341,7 +341,7 @@ class ProbCalculatorMultiSpecies:
         idx (int): idx of the particle to remove
         """
 
-        self._posns[species] = np.delete(self._posns[species],idx,axis=0)
+        self._posns_dict[species] = np.delete(self._posns_dict[species],idx,axis=0)
         self._n[species] -= 1
 
         # Idxs to delete in the pair list
@@ -379,7 +379,7 @@ class ProbCalculatorMultiSpecies:
         self._probs /= self._norm
 
         # Number of pairs now
-        self._no_idx_pairs_possible -= len(idxs_delete)
+        self._no_idx_pairs_possible -= len(probs_idxs_delete)
 
         # Max prob
         if self._no_idx_pairs_possible > 0:
