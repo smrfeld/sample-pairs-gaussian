@@ -434,7 +434,7 @@ class ProbCalculatorMultiSpecies:
         idxs = np.array(range(0,self._n[species]))
         if excluding_idxs != []:
             idxs = np.delete(idxs,excluding_idxs)
-        posns = self._posns[species][idxs]
+        posns = self._posns_dict[species][idxs]
 
         if len(posns) == 0:
             return None
