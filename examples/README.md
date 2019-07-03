@@ -1,6 +1,13 @@
 # Examples
 
-## Simple
+* [Simple](#Simple)
+* [Drawing multiple pairs of particles in 1D](#Multiple1D)
+* [Varying the std. dev. for the Gaussian](#VaryingStdDev)
+* [Drawing pairs in 2D](#Drawing2D)
+* [Multiple species](#MultipleSpecies)
+* [Adding/removing/moving particles](#AddingRemoving)
+
+## <a id="Simple"></a>Simple
 
 A simple example is `simple.py` that shows how to sample pairs of particles.
 
@@ -33,7 +40,7 @@ A good value here is e.g. `std_dev_clip_mult = 3`, such that `99.73%` of the ful
   success = sampler.cdf_sample()
   ```
 
-## Drawing multiple pairs of particles in 1D
+## <a id="Multiple1D"></a>Drawing multiple pairs of particles in 1D
 
 Drawing multiple pairs of particles in 1D space is shown in the `multiple_1d.py` file.
 
@@ -45,9 +52,11 @@ Samples of 1000 pairs of particles (first particle on x axis; second particle on
 
 <img src="figures/multiple_1d_samples.png" width="300">
 
-## Varying the std. dev. for the Gaussian
+## <a id="VaryingStdDev"></a>Varying the std. dev. for the Gaussian
 
 The effect of varying the std. dev. for the Gaussian is shown in the `histograms_1d.py` file.
+
+**Note** Varying the standard deviations or the clip cutoff multiplier does **not** recalculate the distances - this would be inefficient. These are stored separately; hence changing these parameters simply applies the exponential function to all elements.
 
 Histogram of 1000 particle positions drawn from a uniform distribution:
 
@@ -59,7 +68,7 @@ Histogram of 1000 particle positions drawn from a uniform distribution:
 <img src="figures/histogram_1d_2.png" width="300">
 <img src="figures/histogram_1d_3.png" width="300">
 
-## Drawing pairs in 2D
+## <a id="Drawing2D"></a>Drawing pairs in 2D
 
 The module supports points in any spatial dimension, although samples are more difficult to visualize. The file `sample_2d.py` illustrates this in 2D.
 
@@ -71,7 +80,7 @@ For each particle, the average distance to the neighbor it was drawn with. At th
 
 <img src="figures/sample_2d_ave_dist.png" width="300">
 
-## Multiple species
+## <a id="MultipleSpecies"></a>Multiple species
 
 Drawing two particles of the **same species** from a collection of multiple species is also supported.
 
@@ -84,3 +93,9 @@ A further example is `multiple_1d_multispecies.py`, where two populations `A`,`B
 <img src="figures/multiple_1d_multispecies.png" width="300">
 
 where `A` is in red and `B` in blue.
+
+## <a id="AddingRemoving"></a>Adding/removing/moving particles
+
+Adding/removing/moving particles are order N operations.
+
+These are shown in the `add_remove_move_particles.py` and `add_remove_move_particles_multispecies.py` scripts.
