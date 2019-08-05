@@ -1,4 +1,3 @@
-from .return_codes import *
 from .prob_calculator import *
 
 class ProbCalculatorMultiSpecies:
@@ -436,16 +435,11 @@ class ProbCalculatorMultiSpecies:
         excluding_idxs ([int]): list of particle idxs in [0,n) to exclude
 
         Returns:
-        ReturnCode: return code
         float: the sum, else None
         """
 
         if self._n_dict[species] == 0:
-            return [ReturnCode.FAIL_ZERO_PARTICLES, None]
-        elif self._n_dict[species] == 1:
-            return [ReturnCode.FAIL_ONE_PARTICLE, None]
-        elif self._no_idx_pairs_possible == 0:
-            return [ReturnCode.FAIL_STD_CLIP_MULT, None]
+            return 0.0
 
         # Exclude idxs
         idxs = np.array(range(0,self._n_dict[species]))
@@ -454,7 +448,7 @@ class ProbCalculatorMultiSpecies:
         posns = self._posns_dict[species][idxs]
 
         if len(posns) == 0:
-            return None
+            return 0.0
 
         # Distances squared
         dr = posns - posn
@@ -473,4 +467,4 @@ class ProbCalculatorMultiSpecies:
         gauss = np.exp(- dists_squared / two_var) / pow(np.sqrt(np.pi * two_var),self._dim)
 
         # Normalization
-        return [ReturnCode.SUCCESS, np.sum(gauss)]
+        return np.sum(gauss)

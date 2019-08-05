@@ -56,8 +56,5 @@ if __name__ == "__main__":
         handle_fail(code)
 
     # Sum
-    code, gaussian_sum = prob_calculator.compute_gaussian_sum_between_particle_and_existing(np.random.random(size=3), excluding_idxs=[])
-    if code == ReturnCode.SUCCESS:
-        print("Gaussian sum between 0 particle and 1 particle: %f" % gaussian_sum)
-    else:
-        print("Cannot compute gaussian sum: code: %s" % code)
+    gaussian_sum = prob_calculator.compute_gaussian_sum_between_particle_and_existing(np.random.random(size=3), excluding_idxs=[])
+    print("Gaussian sum between random particle and others: %f" % gaussian_sum)
