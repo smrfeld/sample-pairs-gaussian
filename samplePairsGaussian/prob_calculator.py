@@ -393,6 +393,9 @@ class ProbCalculator:
         Args:
         posn (np.array([float])): position of the particle
         excluding_idxs ([int]): list of particle idxs in [0,n) to exclude
+
+        Returns:
+        float: the sum, else None if only 0 or 1 particle exists
         """
 
         if self._n == 0:
