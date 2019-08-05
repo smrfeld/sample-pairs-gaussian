@@ -54,9 +54,11 @@ class ProbCalculatorMultiSpecies:
         self._dim = dim
         self._std_dev = std_dev
         self._std_dev_clip_mult = std_dev_clip_mult
-        self._n = {}
+        self._n_dict = {}
+        self._n = 0
         for species, posns in self._posns_dict.items():
-            self._n[species] = len(posns)
+            self._n_dict[species] = len(posns)
+            self._n += self._n_dict[species]
 
         # Initialize all manner of other properties for possible later use
         self._reset()
@@ -99,6 +101,10 @@ class ProbCalculatorMultiSpecies:
     @property
     def posns_dict(self):
         return self._posns_dict
+
+    @property
+    def n_dict(self):
+        return self._n_dict
 
     @property
     def n(self):
@@ -262,7 +268,8 @@ class ProbCalculatorMultiSpecies:
         """
 
         self._posns_dict[species] = np.insert(self._posns_dict[species],idx,posn,axis=0)
-        self._n[species] += 1
+        self._n_dict[species] += 1
+        self._n += 1
 
         # Shift idxs such that they do not refer to idx
         probs_idxs_all = np.arange(self._no_idx_pairs_possible)
@@ -280,9 +287,9 @@ class ProbCalculatorMultiSpecies:
         self._dists_idxs_second_particle[shift_2] += 1
 
         # Idxs of particle pairs to add
-        idxs_add_1 = np.full(self._n[species]-1,idx)
-        idxs_add_2 = np.delete(np.arange(self._n[species]),idx)
-        species_add = np.full(self._n[species]-1,species)
+        idxs_add_1 = np.full(self._n_dict[species]-1,idx)
+        idxs_add_2 = np.delete(np.arange(self._n_dict[species]),idx)
+        species_add = np.full(self._n_dict[species]-1,species)
 
         # Distances squared
         dr = self._posns_dict[species][idxs_add_1] - self._posns_dict[species][idxs_add_2]
@@ -343,7 +350,8 @@ class ProbCalculatorMultiSpecies:
         """
 
         self._posns_dict[species] = np.delete(self._posns_dict[species],idx,axis=0)
-        self._n[species] -= 1
+        self._n_dict[species] -= 1
+        self._n -= 1
 
         # Idxs to delete in the pair list
         probs_idxs_all = np.arange(self._no_idx_pairs_possible)
@@ -432,15 +440,15 @@ class ProbCalculatorMultiSpecies:
         float: the sum, else None
         """
 
-        if self._n[species] == 0:
+        if self._n_dict[species] == 0:
             return [ReturnCode.FAIL_ZERO_PARTICLES, None]
-        elif self._n[species] == 1:
+        elif self._n_dict[species] == 1:
             return [ReturnCode.FAIL_ONE_PARTICLE, None]
         elif self._no_idx_pairs_possible == 0:
             return [ReturnCode.FAIL_STD_CLIP_MULT, None]
 
         # Exclude idxs
-        idxs = np.array(range(0,self._n[species]))
+        idxs = np.array(range(0,self._n_dict[species]))
         if excluding_idxs != []:
             idxs = np.delete(idxs,excluding_idxs)
         posns = self._posns_dict[species][idxs]
