@@ -270,6 +270,9 @@ class ProbCalculatorMultiSpecies:
         self._n_dict[species] += 1
         self._n += 1
 
+        if self._n_dict[species] == 1:
+            return # Finished
+
         # Shift idxs such that they do not refer to idx
         probs_idxs_all = np.arange(self._no_idx_pairs_possible)
         probs_idxs_this_species = self._probs_species == species
@@ -351,6 +354,9 @@ class ProbCalculatorMultiSpecies:
         self._posns_dict[species] = np.delete(self._posns_dict[species],idx,axis=0)
         self._n_dict[species] -= 1
         self._n -= 1
+
+        if self._n_dict[species] == 0:
+            return # Finished
 
         # Idxs to delete in the pair list
         probs_idxs_all = np.arange(self._no_idx_pairs_possible)

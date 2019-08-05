@@ -247,6 +247,9 @@ class ProbCalculator:
         self._posns = np.insert(self._posns,idx,posn,axis=0)
         self._n += 1
 
+        if self._n == 1:
+            return # Finished
+
         # Shift idxs such that they do not refer to idx
         probs_idxs_all = np.arange(self._no_idx_pairs_possible)
         shift_1 = probs_idxs_all[self._probs_idxs_first_particle >= idx]
@@ -318,6 +321,9 @@ class ProbCalculator:
 
         self._posns = np.delete(self._posns,idx,axis=0)
         self._n -= 1
+
+        if self._n == 0:
+            return # Finished
 
         # Idxs to delete in the pair list
         probs_idxs_all = np.arange(self._no_idx_pairs_possible)
