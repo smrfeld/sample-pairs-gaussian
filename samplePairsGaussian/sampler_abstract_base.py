@@ -1,3 +1,4 @@
+from .return_codes import *
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -60,13 +61,16 @@ class SamplerAbstractBase(ABC):
         no_tries_max (int): max. no. of tries for rejection sampling
 
         Returns:
-        bool: True for success, False for failure
+        ReturnCode: return code
         """
 
         # Check there are sufficient pairs
-        if self.prob_calculator.no_idx_pairs_possible == 0:
-            self._logger.info("> samplePairsGaussian < [base] Fail: not enough pairs within the cutoff radius to sample a pair.")
-            return False
+        if self.prob_calculator.n == 0:
+            return ReturnCode.FAIL_ZERO_PARTICLES
+        elif self.prob_calculator.n == 1:
+            return ReturnCode.FAIL_ONE_PARTICLE
+        elif self.prob_calculator.no_idx_pairs_possible == 0:
+            return ReturnCode.FAIL_STD_CLIP_MULT
 
         # Reset
         self.idx_chosen = None
@@ -84,11 +88,11 @@ class SamplerAbstractBase(ABC):
                 # Accept
                 self.idx_chosen = idx_pair
                 self._logger.info("> samplePairsGaussian < [base] Accepted idx: " + str(self.idx_chosen) + " after: " + str(i_try) + " tries")
-                return True
+                return ReturnCode.SUCCESS
 
         # Getting here means failure
         self._logger.info("> samplePairsGaussian < [base] Fail: Could not rejection sample the pair after: " + str(i_try) + " tries.")
-        return False
+        return ReturnCode.FAIL_NO_SAMPLING_TRIES
 
 
 
@@ -97,17 +101,20 @@ class SamplerAbstractBase(ABC):
         """Sample by directly calculating the CDF via np.random.choice
 
         Returns:
-        bool: True for success, False for failure
+        ReturnCode: return code
         """
 
         # Check there are sufficient pairs
-        if self.prob_calculator.no_idx_pairs_possible == 0:
-            self._logger.info("> samplePairsGaussian < [base] Fail: not enough pairs within the cutoff radius to sample a pair.")
-            return False
+        if self.prob_calculator.n == 0:
+            return ReturnCode.FAIL_ZERO_PARTICLES
+        elif self.prob_calculator.n == 1:
+            return ReturnCode.FAIL_ONE_PARTICLE
+        elif self.prob_calculator.no_idx_pairs_possible == 0:
+            return ReturnCode.FAIL_STD_CLIP_MULT
 
         # Choose
         self.idx_chosen = np.random.choice(range(self.prob_calculator.no_idx_pairs_possible), 1, p=self.prob_calculator.probs)[0]
 
         self._logger.info("> samplePairsGaussian < [base] CDF sampled idx: " + str(self.idx_chosen))
 
-        return True
+        return ReturnCode.SUCCESS

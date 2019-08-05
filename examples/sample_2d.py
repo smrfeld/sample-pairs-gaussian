@@ -34,8 +34,8 @@ if __name__ == "__main__":
     # Sample many particle pairs
 
     # Handle failure
-    def handle_fail(ith_particle):
-        print("Could not draw the " + str(ith_particle) + " particle: try adjusting the std. dev. for the probability cutoff.")
+    def handle_fail(ith_particle, code):
+        print("Could not draw the " + str(ith_particle) + " pair: code: %s" % code)
         sys.exit(0)
 
     no_samples = 10000
@@ -45,9 +45,9 @@ if __name__ == "__main__":
     for i in range(0,no_samples):
 
         # Sample using rejection sampling
-        success = sampler.rejection_sample(no_tries_max=no_tries_max)
-        if not success:
-            handle_fail(i)
+        code = sampler.rejection_sample(no_tries_max=no_tries_max)
+        if code != ReturnCode.SUCCESS:
+            handle_fail(i,code)
 
         # Alternatively sample using CDF
         #success = sampler.cdf_sample_pair_given_nonzero_probs_for_first_particle()

@@ -41,23 +41,23 @@ if __name__ == "__main__":
     sampler.set_logging_level(logging.INFO)
 
     # Handle failure
-    def handle_fail():
-        print("Could not draw particle because only 0 or 1 particle exists")
+    def handle_fail(code):
+        print("Could not draw pair: code: %s" % code)
 
     # Sample pair using rejection sampling
     no_tries_max = 100
-    success = sampler.rejection_sample(no_tries_max=no_tries_max)
-    if not success:
-        handle_fail()
+    code = sampler.rejection_sample(no_tries_max=no_tries_max)
+    if code != ReturnCode.SUCCESS:
+        handle_fail(code)
 
     # Sample pair using CDF
-    success = sampler.cdf_sample()
-    if not success:
-        handle_fail()
+    code = sampler.cdf_sample()
+    if code != ReturnCode.SUCCESS:
+        handle_fail(code)
 
     # Sum
-    gaussian_sum = prob_calculator.compute_gaussian_sum_between_particle_and_existing(posns[0], excluding_idxs=[0])
-    if gaussian_sum:
+    code, gaussian_sum = prob_calculator.compute_gaussian_sum_between_particle_and_existing(posns[0], excluding_idxs=[0])
+    if code == ReturnCode.SUCCESS:
         print("Gaussian sum between 0 particle and 1 particle: %f" % gaussian_sum)
     else:
-        print("Cannot compute gaussian sum; only 0 or 1 particle exists")
+        print("Cannot compute gaussian sum: code: %s" % code)

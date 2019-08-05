@@ -1,3 +1,5 @@
+from .return_codes import *
+
 import numpy as np
 import logging
 
@@ -395,11 +397,16 @@ class ProbCalculator:
         excluding_idxs ([int]): list of particle idxs in [0,n) to exclude
 
         Returns:
-        float: the sum, else None if only 0 or 1 particle exists
+        ReturnCode: return code
+        float: the sum, else None
         """
 
         if self._n == 0:
-            return None
+            return [ReturnCode.FAIL_ZERO_PARTICLES, None]
+        elif self._n == 1:
+            return [ReturnCode.FAIL_ONE_PARTICLE, None]
+        elif self._no_idx_pairs_possible == 0:
+            return [ReturnCode.FAIL_STD_CLIP_MULT, None]
 
         # Exclude idxs
         idxs = np.array(range(0,self._n))
@@ -427,4 +434,4 @@ class ProbCalculator:
         gauss = np.exp(- dists_squared / two_var) / pow(np.sqrt(np.pi * two_var),self._dim)
 
         # Normalization
-        return np.sum(gauss)
+        return [ReturnCode.SUCCESS, np.sum(gauss)]

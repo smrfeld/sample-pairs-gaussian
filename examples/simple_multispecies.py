@@ -41,17 +41,17 @@ if __name__ == "__main__":
     sampler.set_logging_level(logging.INFO)
 
     # Handle failure
-    def handle_fail():
-        print("Could not draw particle: try adjusting the std. dev. for the probability cutoff.")
+    def handle_fail(code):
+        print("Could not draw pair: code: %s" % code)
         sys.exit(0)
 
     # Sample pair using rejection sampling
     no_tries_max = 100
-    success = sampler.rejection_sample(no_tries_max=no_tries_max)
-    if not success:
-        handle_fail()
+    code = sampler.rejection_sample(no_tries_max=no_tries_max)
+    if code != ReturnCode.SUCCESS:
+        handle_fail(code)
 
     # Sample pair using CDF
-    success = sampler.cdf_sample()
-    if not success:
-        handle_fail()
+    code = sampler.cdf_sample()
+    if code != ReturnCode.SUCCESS:
+        handle_fail(code)
