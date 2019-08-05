@@ -245,6 +245,8 @@ class ProbCalculator:
         """
 
         self._posns = np.insert(self._posns,idx,posn,axis=0)
+        if len(self._posns.shape) == 1:
+            self._posns = np.array([self._posns])
         self._n += 1
 
         if self._n == 1:

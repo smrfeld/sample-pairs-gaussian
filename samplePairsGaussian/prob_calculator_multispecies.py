@@ -267,6 +267,8 @@ class ProbCalculatorMultiSpecies:
         """
 
         self._posns_dict[species] = np.insert(self._posns_dict[species],idx,posn,axis=0)
+        if len(self._posns_dict[species].shape) == 1:
+            self._posns_dict[species] = np.array([self._posns_dict[species]])
         self._n_dict[species] += 1
         self._n += 1
 
