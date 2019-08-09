@@ -164,8 +164,8 @@ class ProbCalculator:
         self._probs_idxs_first_particle = np.array([]).astype(int)
         self._probs_idxs_second_particle = np.array([]).astype(int)
         self._probs = np.array([]).astype(float)
-        self._max_prob = None
-        self._norm = None
+        self._max_prob = 0.0
+        self._norm = 0.0
         self._no_idx_pairs_possible = 0
 
 
@@ -232,7 +232,7 @@ class ProbCalculator:
         if self._no_idx_pairs_possible > 0:
             self._max_prob = max(self._probs)
         else:
-            self._max_prob = None
+            self._max_prob = 0.0
 
 
 
@@ -285,7 +285,11 @@ class ProbCalculator:
 
             # Filter by max dist
             stacked = np.array([idxs_add_1,idxs_add_2,dists_squared_add]).T
-            idxs_add_1,idxs_add_2, dists_squared_add = stacked[stacked[:,2] < max_dist_squared].T
+            idxs_add_1, idxs_add_2, dists_squared_add = stacked[stacked[:,2] < max_dist_squared].T
+
+            # Back to integers
+            idxs_add_1 = idxs_add_1.astype(int)
+            idxs_add_2 = idxs_add_2.astype(int)
 
         # Compute gaussians
         two_var = 2.0 * pow(self._std_dev,2)
@@ -310,8 +314,7 @@ class ProbCalculator:
         if self._no_idx_pairs_possible > 0:
             self._max_prob = max(self._probs)
         else:
-            self._max_prob = None
-
+            self._max_prob = 0.0
 
 
     def remove_particle(self, idx):
@@ -364,7 +367,7 @@ class ProbCalculator:
         if self._no_idx_pairs_possible > 0:
             self._max_prob = max(self._probs)
         else:
-            self._max_prob = None
+            self._max_prob = 0.0
 
         # Shift the idxs such that they again include idx
         probs_idxs_all = np.arange(self._no_idx_pairs_possible)

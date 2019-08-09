@@ -90,8 +90,8 @@ class ProbCalculatorMultiSpecies:
         self._probs_idxs_first_particle = np.array([]).astype(int)
         self._probs_idxs_second_particle = np.array([]).astype(int)
         self._probs = np.array([]).astype(float)
-        self._max_prob = None
-        self._norm = None
+        self._max_prob = 0.0
+        self._norm = 0.0
         self._no_idx_pairs_possible = 0
 
 
@@ -253,7 +253,7 @@ class ProbCalculatorMultiSpecies:
         if self._no_idx_pairs_possible > 0:
             self._max_prob = max(self._probs)
         else:
-            self._max_prob = None
+            self._max_prob = 0.0
 
 
 
@@ -341,7 +341,7 @@ class ProbCalculatorMultiSpecies:
         if self._no_idx_pairs_possible > 0:
             self._max_prob = max(self._probs)
         else:
-            self._max_prob = None
+            self._max_prob = 0.0
 
 
 
@@ -401,7 +401,7 @@ class ProbCalculatorMultiSpecies:
         if self._no_idx_pairs_possible > 0:
             self._max_prob = max(self._probs)
         else:
-            self._max_prob = None
+            self._max_prob = 0.0
 
         # Shift the idxs such that they again include idx
         probs_idxs_all = np.arange(self._no_idx_pairs_possible)
