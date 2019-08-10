@@ -406,7 +406,7 @@ class ProbCalculator:
         excluding_idxs ([int]): list of particle idxs in [0,n) to exclude
 
         Returns:
-        float: the sum, else None
+        float: the sum, else 0.0
         """
 
         if self._n == 0:
@@ -439,3 +439,29 @@ class ProbCalculator:
 
         # Normalization
         return np.sum(gauss)
+
+
+
+    def compute_gaussian_sum_between_two_particles(self, posn_1, posn_2):
+        """Compute normalization = sum_{j} exp( -(xi-xj)^2 / 2*sigma^2 ) for given particles xi and xj
+        Takes clipping into account with std dev
+
+        Args:
+        posn_1 (np.array([float])): position of the first particle
+        posn_2 (np.array([float])): position of the second particle
+
+        Returns:
+        float: the sum, else 0.0
+        """
+
+        dr = posn_1 - posn_2
+        dist_squared = np.sum(dr*dr)
+
+        # Cutoff
+        if self._std_dev_clip_mult != None:
+            max_dist_squared = pow(self._std_dev_clip_mult * self._std_dev, 2)
+            if dist_squared > max_dist_squared:
+                return 0.0
+
+        two_var = 2.0 * pow(self._std_dev,2)
+        return np.exp(- dist_squared / two_var) / pow(np.sqrt(np.pi * two_var),3)
